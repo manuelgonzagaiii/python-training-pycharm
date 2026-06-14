@@ -1,0 +1,47 @@
+# Byte-compiled / optimized
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+*.egg
+
+# Test / coverage / type-check caches
+.pytest_cache/
+.hypothesis/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# MiniERP runtime artifacts (databases, exports, backups, logs)
+*.sqlite3
+*.db
+/data/
+/exports/
+/backups/
+*.log
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+
+# JetBrains IDE (keep EduTools course files, ignore local IDE state)
+.idea/
+*.iml
+
+
+CLAUDE.md
