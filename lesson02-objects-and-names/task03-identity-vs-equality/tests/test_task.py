@@ -1,6 +1,6 @@
 """Check for stage 3: identity versus equality via same_object().
 
-Grading policy (CLAUDE.md A7): identity is genuinely right or wrong, so this is
+Grading policy: identity is genuinely right or wrong, so this is
 strict. We use two equal-but-distinct lists to prove the function tests identity
 (is), not equality (==), without depending on any interning behaviour.
 """

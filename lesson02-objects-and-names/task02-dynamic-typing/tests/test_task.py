@@ -1,6 +1,6 @@
 """Check for stage 2: dynamic typing via describe().
 
-Grading policy (CLAUDE.md A7): describe() is a debugging helper, so its exact
+Grading policy: describe() is a debugging helper, so its exact
 wording is the learner's choice. The rule we enforce is that the result reports two
 true facts about the value: its repr and its type name. Any phrasing that contains
 both passes.

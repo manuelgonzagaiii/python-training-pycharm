@@ -1,6 +1,6 @@
 """Check for stage 6: report the running Python version.
 
-Grading policy (CLAUDE.md A7): the wording of the version line is the learner's
+Grading policy: the wording of the version line is the learner's
 free choice. The rule we enforce is that the value is read live from the
 interpreter (sys.version_info), not hard-coded. We prove that by computing the
 real running version here in the test and requiring it to appear in the output.

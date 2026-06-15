@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate EduTools answer placeholders from a marked-up solution template.
 
-Authoring model (see CLAUDE.md A8, "Option A"):
+Authoring model ("Option A" answer placeholders):
 
   * You write the FULL, correct, runnable solution in a template file named
     ``<realname>.tmpl`` (for example ``main.py.tmpl``).
@@ -16,14 +16,13 @@ Authoring model (see CLAUDE.md A8, "Option A"):
 
 Why a script: offsets are character positions into the solution file, so any
 edit shifts them. Re-running this tool after editing the template regenerates
-them exactly, instead of counting by hand (CLAUDE.md A8).
+them exactly, instead of counting by hand.
 
 The tool is part of the authoring toolchain, so it runs on the system Python
 (3.9+). It writes plain-text YAML (no third-party dependency).
 
-The exact EduTools placeholder schema (the field names below) is from background
-knowledge of the plugin, not a reference document — confirm the rendered blanks
-in the IDE (CLAUDE.md A2, A8).
+The EduTools placeholder schema (the field names below) can vary by plugin
+version, so confirm the rendered blanks in the IDE.
 
 Usage:
     python tools/build_placeholders.py <task_dir> [<task_dir> ...]
@@ -107,6 +106,14 @@ def build_task_info(file_entries, has_tests):
     if has_tests:
         lines.append("  - name: tests/test_task.py")
         lines.append("    visible: false")
+        lines.append("    propagatable: false")
+    lines.append("  - name: __init__.py")
+    lines.append("    visible: false")
+    lines.append("    propagatable: false")
+    if has_tests:
+        lines.append("  - name: tests/__init__.py")
+        lines.append("    visible: false")
+        lines.append("    propagatable: false")
     return "\n".join(lines) + "\n"
 
 

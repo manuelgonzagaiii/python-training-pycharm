@@ -1,157 +1,149 @@
-# MiniERP — Authoring Conventions & Continuity Rules
+# MiniERP: authoring conventions and continuity rules
 
-These are **binding decisions** for populating the course stage-by-stage. They
-come from the curriculum coherence review (which flagged 3 blocker, 3 major, and
-4 minor continuity issues against the auto-designed blueprint). The skeleton's
-folder structure is sound; these rules govern the *content* you write into each
-`task.md` / `task.py` / `tests/test_task.py`.
+These are the rules for writing each stage of the course. The guided project grows one
+codebase across many lessons, so consistency between stages matters more than anything
+else. The golden rule:
 
-> Rule of thumb: **build a thing once, then extend it.** A later phase must never
-> silently re-create something an earlier phase already built.
+> Build a thing once, then extend it. A later stage must never quietly re-create
+> something an earlier stage already built.
 
----
+Read this before populating any stage. The per-stage checklist is at the end.
 
 ## 1. One package import root: `minierp`
 
-The auto-design drifted between `mini_erp/`, `core/`, `erp/`, and `minierp/`.
-**Canonical root is `minierp`** (also the distribution name).
+Use a single import root everywhere: `minierp` (also the distribution name). Do not let
+`mini_erp`, `core`, or `erp` creep in as alternative roots.
 
-Flat phase → package phase:
+The project changes shape once, on purpose:
 
-- **Phases p01–p10 (lessons 1–27):** code lives in **flat top-level modules**
+- Phases 1 to 10 (lessons 1 to 27): code lives in flat top-level modules
   (`money.py`, `text.py`, `catalog.py`, `pricing.py`, `rules.py`, `inventory.py`,
-  `domain.py`, `errors.py`, `logging_setup.py`, …). Packages are not taught yet.
-- **Phase p11 (lessons 28–30):** the packaging phase **moves the existing flat
-  modules into the `minierp` package** — it does **not** invent new toy modules.
-  (Fixes BLOCKER: p11 must consolidate, not recreate, money/catalog/pricing.)
+  `domain.py`, `errors.py`, `logging_setup.py`, and so on). Packages are not taught yet.
+- Phase 11 (lessons 28 to 30) is the packaging phase. It **moves the existing flat
+  modules into the `minierp` package**. It does not invent new modules to package, and
+  it does not rebuild money, catalog, or pricing from scratch; those already exist.
 
-Canonical subpackage layout (target by p18):
+Target package layout by phase 18:
 
 ```
 minierp/
   __init__.py            # __version__
-  core/                  # config, errors, logging, money, text utils
+  core/                  # config, errors, logging, money, text utilities
   domain/                # Product, Customer, Invoice, LineItem, Money, enums
-  services/             # catalog, pricing, inventory, sales, payments,
+  services/              # catalog, pricing, inventory, sales, payments,
                          # reporting, users/auth, audit, repository
   persistence/           # sqlite repo, import/export, backups
   concurrency/           # threads, processes, async helpers
-  net/                   # sockets, stdlib http (low level)
-  web/                   # stdlib API first, then FastAPI app
-  cli/                   # argparse → Typer
-  tui/                   # curses → Textual
-  gui/                   # tkinter MVC
+  net/                   # sockets, low-level stdlib http
+  web/                   # stdlib API first, then the FastAPI app
+  cli/                   # argparse, then Typer
+  tui/                   # curses, then Textual
+  gui/                   # tkinter, MVC split
   plugins/               # entry-point plugin system
 ```
 
-Whenever an earlier-phase stage references a path like `erp/web` or `core/...`,
-write it as a `minierp.*` subpackage instead. (Fixes BLOCKER: cross-phase naming.)
+Whenever an earlier stage refers to a path like `erp/web`, write it as a `minierp`
+subpackage (`minierp.web`).
 
-## 2. One `Money` value object: integer **minor units**
+## 2. One `Money` value object: integer minor units
 
-`Money` is defined once and carried forward — never re-represented.
+`Money` is defined once and carried forward, never re-represented.
 
-- **p02 (lesson 03 numbers-and-money):** Decimal helpers for *parsing/formatting*
-  at the I/O boundary (string ⇄ amount), plus rounding rules.
-- **p05 (lesson 14 value-objects):** introduce `Money` as a **frozen, slotted
-  dataclass storing integer minor units (cents)**. The `__bytes__` / `struct`
-  packing stages depend on this 8-byte integer representation.
-- **p06 (lesson 14/16):** **extend the same `Money`** (ordering, arithmetic,
-  `dataclasses.replace`). Do **not** redefine it with a `Decimal` field.
-- Never claim Money "replaces ad-hoc float prices" — the course **never uses
-  float for money**. The correct framing: "consolidates the p02 Decimal helpers
-  and the p05 `Money` class into the canonical value object."
+- Lesson 3 (numbers and money): Decimal helpers for parsing and formatting at the
+  input/output boundary (string to amount and back), plus the rounding rules.
+- Lesson 14 (value objects): introduce `Money` as a frozen, slotted dataclass that
+  stores integer minor units (cents). The `__bytes__` and `struct` packing stages
+  depend on this integer representation.
+- Lesson 14 onward: extend that same `Money` (ordering, arithmetic,
+  `dataclasses.replace`). Do not redefine it with a `Decimal` field.
 
-(Fixes MAJOR: triple Money definition / cents-vs-Decimal conflict / false float claim.)
+The course never uses `float` for money, so never describe `Money` as "replacing float
+prices". The correct framing is that it consolidates the Decimal helpers and the value
+object into one type.
 
 ## 3. One `@audit` decorator
 
-A single audit-logging decorator, named **`@audit`** (not `@audited`).
+A single audit-logging decorator named `@audit` (not `@audited`).
 
-- **p07 (lesson 20):** build a minimal `@audit` to demonstrate `functools.wraps`.
-- **p08 (lesson 20/21):** promote it to the parametrized milestone version and
-  say it **supersedes** the p07 one.
-- **p09 (lesson 24):** **add `ParamSpec`/`Concatenate` typing to the existing
-  `@audit`** — do not introduce a fresh decorator.
-
-(Fixes MINOR: audit decorator introduced three times under two names.)
+- Lesson 20: build a minimal `@audit` to demonstrate `functools.wraps`.
+- Lesson 20/21: promote it to the parametrized version, and say it supersedes the first.
+- Lesson 24: add `ParamSpec`/`Concatenate` types to that same `@audit`.
 
 ## 4. One generic `Repository[T]`
 
-- **p06:** introduce the abstract generic `Repository[T]` (`abc.ABC`) +
-  `InMemoryRepository`.
-- **p09:** the **typing pass** — add precise type params/variance and `@overload`
-  to the **existing** `Repository[T]`. Frame as "type the p06 container," not
-  "replace ad-hoc per-entity stores."
-- **p12:** swap the backend to SQLite **behind the same interface**
-  (`SqliteRepository`), not a parallel re-implementation.
+- Lesson 14: introduce the abstract generic `Repository[T]` (`abc.ABC`) with an
+  in-memory implementation.
+- Lesson 24: the typing pass. Add precise type parameters, variance, and `@overload` to
+  the existing `Repository[T]`. Frame it as typing the existing container, not replacing
+  per-entity stores.
+- Lesson 33: swap the backend to SQLite behind the same interface. Not a parallel
+  re-implementation.
 
-(Fixes MINOR: Repository redundancy across p06/p09/p12.)
+## 5. One typing baseline; CI wires it, it does not recreate it
 
-## 5. One typing baseline; CI wires it, doesn't recreate it
-
-- **p09 (lesson 25):** establish the strict-typed core: pass `mypy --strict` and
-  pyright strict, **ship `py.typed`**.
-- **p16 (lesson 45):** **wire the existing mypy/pyright checks into the CI /
-  pre-commit gate** and fix defects introduced by p10–p15. Do **not** re-add
-  `py.typed` or "introduce" pyright config for the first time.
-
-(Fixes MINOR: duplicated py.typed / type-config deliverables.)
+- Lesson 25: establish the strict-typed core. Pass `mypy --strict` and pyright strict,
+  and ship a `py.typed` marker.
+- Lesson 45: wire the existing mypy/pyright checks into the CI and pre-commit gate, and
+  fix defects introduced by lessons 26 to 42. Do not re-add `py.typed` or introduce the
+  type-checker config for the first time here.
 
 ## 6. Forward-reference fixes
 
-- **p13 async repository (BLOCKER):** the `async-comprehensions` stage consumes an
-  async customer stream. **Add a preceding p13 stage** `async-repository`
-  (`AsyncCustomerRepo` as an async generator over the p12 SQLite repo via
-  `loop.run_in_executor`), **or** rewire `async-comprehensions` to consume an
-  already-built stream (`stream_report_rows()` / `stream_audit_events()` from the
-  `async-with-for-gen` stage). Decision: **add the `async-repository` stage** when
-  populating lesson 36.
-- **p14 httpx wording (MAJOR):** the `httpx-client` stage must not claim the TUI
-  exists "from earlier phases" — the TUI is first built in p15. Reword to: "used
-  by the CLI now, and by the TUI/GUI built in the next phase."
-- **p13 lock-vs-SQLite (MINOR):** add one clause clarifying that the in-memory
-  structures being locked are **process-local counters/caches** (ID allocation,
-  stock cache) layered over the p12 SQLite repo — both coexist.
+These ordering issues must be handled when populating:
 
-## 7. p02 geometry helpers location (MAJOR)
+- Lesson 36 (async core): the `async-comprehensions` stage consumes an async customer
+  stream, so add an `async-repository` stage before it (an `AsyncCustomerRepo` async
+  generator over the SQLite repo via `loop.run_in_executor`), or rewire it to consume a
+  stream that an earlier stage already built (`stream_report_rows` /
+  `stream_audit_events`). Decision: add the `async-repository` stage.
+- Lesson 39 (httpx client): the TUI does not exist until lesson 41, so do not say the
+  TUI consumes the client "from earlier phases". Word it as "used by the CLI now, and by
+  the TUI and GUI built next".
+- Lesson 34 (locks): clarify that the in-memory structures being locked are
+  process-local counters and caches (ID allocation, stock cache) layered over the SQLite
+  repository, so persistence and in-memory shared state clearly coexist.
 
-The `complex-bin-coordinates` stage (lesson 04) must keep its helpers in the
-**flat p02 module as generic 2-D coordinate functions** over complex numbers.
-Do **not** place them under `minierp/inventory/` — that package does not exist
-until p11. Defer the "spatial query for Inventory" framing to p03/p04 or p11.
+## 7. Lesson 4 geometry helpers stay flat
 
----
+The `complex-bin-coordinates` stage keeps its helpers in the flat lesson-4 module as
+generic 2-D coordinate functions over complex numbers. Do not place them under
+`minierp/inventory/`; that package does not exist until lesson 28. Defer the "spatial
+query for Inventory" framing to a later phase.
 
-## Stdlib-first → OSS ordering (confirmed correct — keep it)
+## Stdlib first, then open source
 
-The review confirmed the dependency arc is right; preserve it when populating:
+Keep this ordering when populating. Teach the standard-library version first so the
+learner understands the mechanics, then introduce the open-source tool.
 
-| Capability | Stdlib first | Then OSS |
-|------------|--------------|----------|
-| Web server | `http.server`, `wsgiref` | FastAPI + uvicorn |
-| HTTP client | `urllib`, `http.client` | httpx |
-| Templating | hand-built strings, `string.Template` | Jinja2 |
-| Tests | `unittest` + `unittest.mock`, `doctest` | pytest + hypothesis + coverage |
-| CLI | `argparse` | Typer / Click |
-| TUI | `curses` | Rich / Textual |
-| DB | `sqlite3` | (stays stdlib; SQLAlchemy optional) |
-| Email | `smtplib` + local `aiosmtpd`/MailHog | — |
+| Capability  | Standard library first         | Then open source            |
+|-------------|--------------------------------|-----------------------------|
+| Web server  | `http.server`, `wsgiref`       | FastAPI + uvicorn           |
+| HTTP client | `urllib`, `http.client`        | httpx                       |
+| Templating  | hand-built, `string.Template`  | Jinja2                      |
+| Tests       | `unittest`, `doctest`          | pytest, hypothesis, coverage|
+| CLI         | `argparse`                     | Typer / Click               |
+| TUI         | `curses`                       | Rich / Textual              |
+| Database    | `sqlite3`                      | (stays stdlib; SQLAlchemy optional) |
+| Email       | `smtplib` + local `aiosmtpd`   | (no external mail service)  |
 
-No paid services anywhere. External systems always use an OSS stand-in.
-
----
+No paid services anywhere. When an external system is needed, use an open-source
+stand-in that runs on the learner's own machine.
 
 ## Per-stage populate checklist
 
 When filling a stage, replace all three stubs and remove the skeleton status line:
 
-1. **`task.md`** — real description (concept → instructions → what to implement),
-   a worked example, and a `<div class="hint">` with a genuine hint. Keep the
-   "Python features introduced" list accurate.
-2. **`task.py`** — starter code with `# TODO` holes the learner fills. For
-   `framework` lessons, remember code **propagates forward**: the next stage's
-   `task.py` should start from this stage's intended solution.
-3. **`tests/test_task.py`** (edu) — real `unittest` checks; remove the skipped
-   placeholder. Tests must pass only when the stage is correctly solved.
-4. Verify the stage in isolation: `cd <task dir> && python -m unittest`.
+1. `task.md`: the real description. Lead with the reasoning (what it is, why it exists,
+   the trade-offs, the mental model), then the instructions, then a worked example, and
+   a genuine hint. Keep the "Python features introduced" list accurate. State plainly
+   which parts of the answer are the learner's free choice and which the check insists on.
+2. The solution: author it as `<realname>.tmpl` with `[[PH:hint]]answer[[/PH]]` markers
+   over the real learning points, then run `tools/build_placeholders.py` to produce the
+   clean file and the placeholder offsets. In a framework lesson the file carries
+   forward, so blank only what is new in this stage.
+3. `tests/test_task.py` (graded stages): real `unittest` checks that grade validity, not
+   exact wording. A different valid answer must pass; an invalid value must fail. Remove
+   the skipped placeholder test.
+4. Verify the stage in isolation: `cd <task dir> && python -m unittest discover -s tests`.
+   Then drop a `.populated` marker in the lesson directory so the scaffolder leaves it
+   alone.

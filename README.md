@@ -63,8 +63,8 @@ is needed we use an OSS stand-in:
 
 ## For authors (this repo)
 
-Read `CLAUDE.md` (binding project policies) and `docs/AUTHORING_NOTES.md` (continuity
-rules and the per-stage populate checklist) before writing any stage.
+Read `docs/AUTHORING_NOTES.md` (continuity rules and the per-stage populate checklist)
+before writing any stage.
 
 The skeleton is generated from a manifest so it stays consistent:
 

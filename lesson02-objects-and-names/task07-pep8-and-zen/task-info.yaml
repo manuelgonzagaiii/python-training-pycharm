@@ -1,13 +1,12 @@
-# Choice stage. The exact EduTools choice schema is background knowledge, not a
-# reference doc: confirm the field names and rendering in the IDE (CLAUDE.md A8).
 type: choice
 is_multiple_choice: false
 options:
-  - text: "line_total"
+  - text: line_total
     is_correct: true
-  - text: "lineTotal"
+  - text: lineTotal
     is_correct: false
-  - text: "LineTotal"
+  - text: LineTotal
     is_correct: false
-  - text: "line-total"
+  - text: line-total
     is_correct: false
+local_check: true

@@ -1,6 +1,6 @@
 """Check for stage 3: peek under the hood with dis.
 
-Grading policy (CLAUDE.md A7): we grade the maths, not the implementation. Any
+Grading policy: we grade the maths, not the implementation. Any
 correct way to compute quantity times price passes, including price times quantity.
 We deliberately do NOT check the bytecode itself: disassembly output changes between
 Python versions and there is more than one valid way to write a multiplication, so

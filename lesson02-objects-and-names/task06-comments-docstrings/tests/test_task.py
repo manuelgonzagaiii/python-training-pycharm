@@ -1,6 +1,6 @@
 """Check for stage 6: comments and docstrings.
 
-Grading policy (CLAUDE.md A7): the wording of every docstring is the learner's
+Grading policy: the wording of every docstring is the learner's
 choice. The rule is that the documentation exists and is reachable at runtime: the
 module has a non-empty docstring naming the product, and each public helper carries a
 non-empty docstring.

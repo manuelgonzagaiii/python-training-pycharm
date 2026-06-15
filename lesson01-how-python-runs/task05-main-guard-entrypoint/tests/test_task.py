@@ -1,6 +1,6 @@
 """Check for stage 5: the entry point and the __main__ guard.
 
-Grading policy (CLAUDE.md A7): this validates that the program is correct, not
+Grading policy: this validates that the program is correct, not
 that it matches one exact wording. The welcome text is the learner's free choice;
 the rules we enforce are that welcome() returns a real non-empty string and that
 importing the module produces no output (the run code must sit behind the guard).

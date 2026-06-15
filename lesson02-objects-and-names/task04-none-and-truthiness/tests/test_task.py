@@ -1,6 +1,6 @@
 """Check for stage 4: None and truthiness via display_name().
 
-Grading policy (CLAUDE.md A7): the behaviour is the rule (a real name is kept; a
+Grading policy: the behaviour is the rule (a real name is kept; a
 missing one becomes a non-empty fallback), but the exact fallback word is the
 learner's choice. We assert the fallback is consistent and non-empty rather than
 demanding the literal 'Guest'.

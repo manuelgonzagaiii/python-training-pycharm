@@ -43,5 +43,5 @@ Thumbs.db
 .idea/
 *.iml
 
-
-CLAUDE.md
+# Author-only placeholder templates (source for tools/build_placeholders.py; never shipped)
+*.tmpl

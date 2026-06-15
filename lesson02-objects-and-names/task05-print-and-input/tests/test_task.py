@@ -1,6 +1,6 @@
 """Check for stage 5: the welcome banner (and keeping I/O at the edges).
 
-Grading policy (CLAUDE.md A7): the banner's look is partly the learner's choice
+Grading policy: the banner's look is partly the learner's choice
 (any single rule character is fine), but the structure is the rule: three lines, the
 correct width, and a centered title. We also re-check the lesson-1 contract that
 importing the module stays silent.

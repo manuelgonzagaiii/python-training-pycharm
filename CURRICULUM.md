@@ -5,9 +5,7 @@ Auto-generated from `tools/curriculum.json` by `tools/scaffold_course.py`. This 
 - **Phases:** 18  •  **Lessons:** 51  •  **Tasks/stages:** 373
 - **Dependency policy:** standard-library-first, then free/open-source libraries — no paid services.
 
-Before populating any stage, read `CLAUDE.md` (binding project policies) and `docs/AUTHORING_NOTES.md` (continuity rules and the per-stage populate checklist).
-
-> **Coverage audit:** The curriculum is remarkably thorough: across 18 phases it covers the vast majority of the master checklist, including hard items like descriptors+__set_name__, metaclasses+__prepare__, ParamSpec/TypeVarTuple, PEP 695, ExceptionGroup/except*, structured concurrency (TaskGroup), free-threading awareness, ast NodeVisitor/NodeTransformer, ctypes, entry-point plugins, and the full packaging/Docker/PyInstaller story. The gaps are mostly at the granular edges: a handful of dunders never named (__bytes__, __index__, __weakref__, __missing__), several itertools functions implied by 'itertools(all)' but never taught (starmap, compress, filterfalse, dropwhile, takewhile, zip_longest), a few functools/dataclasses/copy helpers (cmp_to_key, dataclasses.replace), the cmath and dbm stdlib modules, async comprehensions (explicitly in the RARE list), and a small set of fine-grained API details (warnings.catch_warnings, Decimal traps/context flags, enum _missing_/_generate_next_value_, complex .real/.imag/.conjugate, codecs error-handler registration, sqlite register_converter/register_adapter round-trip). None are large structural holes; most are one-task or even one-section additions to existing phases. Importance skews toward 'common' and 'rare', with only a couple of 'core' items (the missing itertools predicates and dataclasses.replace are the most likely to be missed in real-world code).
+Before populating any stage, read `docs/AUTHORING_NOTES.md` (continuity rules and the per-stage populate checklist).
 
 ---
 
