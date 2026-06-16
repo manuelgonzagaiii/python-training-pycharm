@@ -1,4 +1,3 @@
-type: framework
 content:
   - task01-curses-intro
   - task02-curses-windows-input

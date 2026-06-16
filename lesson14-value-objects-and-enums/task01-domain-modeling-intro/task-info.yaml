@@ -1,4 +1,4 @@
 type: theory
 files:
-  - name: task.py
+  - name: task.md
     visible: true

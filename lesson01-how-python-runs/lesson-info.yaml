@@ -1,4 +1,3 @@
-type: framework
 content:
   - task01-install-and-repl
   - task02-source-to-bytecode

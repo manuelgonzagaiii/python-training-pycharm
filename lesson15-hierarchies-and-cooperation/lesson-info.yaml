@@ -1,4 +1,3 @@
-type: framework
 content:
   - task01-product-base-and-super
   - task02-product-subclasses

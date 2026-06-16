@@ -1,4 +1,3 @@
-type: framework
 content:
   - task01-packaging-concepts
   - task02-src-layout

@@ -1,4 +1,3 @@
-type: framework
 content:
   - task01-sqlite-intro
   - task02-sqlite-params

@@ -1,4 +1,3 @@
-type: framework
 content:
   - task01-exception-hierarchy-tour
   - task02-try-except-else-finally

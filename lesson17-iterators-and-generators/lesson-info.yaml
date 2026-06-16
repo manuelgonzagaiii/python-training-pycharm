@@ -1,4 +1,3 @@
-type: framework
 content:
   - task01-what-is-iteration
   - task02-manual-iterator

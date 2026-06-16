@@ -84,7 +84,10 @@ def validate():
             if not os.path.exists(linfo):
                 errors.append("{0}: lesson-info.yaml missing".format(ld))
                 continue
-            tasks = content_list(read(linfo))
+            linfo_text = read(linfo)
+            lesson_typ = task_type(linfo_text)  # 'framework' for guided projects, else regular
+            tasks = content_list(linfo_text)
+            task_types = []
             if not tasks:
                 warnings.append("{0}: lesson-info has empty content".format(ld))
             for t in tasks:
@@ -95,18 +98,22 @@ def validate():
                     continue
                 tx = read(tinfo)
                 typ = task_type(tx)
+                task_types.append(typ)
                 decl = files_list(tx)
                 if typ is None:
                     errors.append("{0}/{1}: no type".format(ld, t))
                 for f in decl:
                     if not os.path.exists(os.path.join(tdir, f)):
                         errors.append("{0}/{1}: declares '{2}' but that file is missing".format(ld, t, f))
+                # A bare theory task (no files) does NOT render its description in
+                # the IDE; it must declare task.md (the form the Welcome lesson uses).
                 if typ == "theory" and not decl:
-                    errors.append("{0}/{1}: theory task declares no files (needs task.md)".format(ld, t))
+                    errors.append("{0}/{1}: theory task declares no files; declare task.md so it renders".format(ld, t))
                 if typ == "edu" and not any("test" in f for f in decl):
                     errors.append("{0}/{1}: edu task declares no test file".format(ld, t))
-                if typ == "choice" and "options" not in tx:
-                    errors.append("{0}/{1}: choice task declares no options".format(ld, t))
+                # NOTE: a choice task legitimately has no `options:` in task-info —
+                # EduTools keeps the options in its own author database and rewrites
+                # task-info to a minimal descriptor, so we don't require them here.
                 # warnings: stray author/source files
                 for base, _dirs, files in os.walk(tdir):
                     for f in files:
@@ -115,6 +122,15 @@ def validate():
                             warnings.append("{0}/{1}: author-only template in task dir: {2}".format(ld, t, rel))
                         elif f.endswith(".py") and rel not in decl:
                             warnings.append("{0}/{1}: undeclared .py file: {2}".format(ld, t, rel))
+            # A framework (guided-project) lesson is built around code that carries
+            # forward between stages; a theory/choice stage has no code and will not
+            # open inside one (the description panel stays blank). Such lessons must
+            # be regular lessons instead.
+            if lesson_typ == "framework" and any(tt in ("theory", "choice") for tt in task_types):
+                bad = [t for t, tt in zip(tasks, task_types) if tt in ("theory", "choice")]
+                errors.append(
+                    "{0}: framework lesson contains non-code stages {1}; "
+                    "make it a regular lesson (remove 'type: framework')".format(ld, bad))
     return errors, warnings
 
 

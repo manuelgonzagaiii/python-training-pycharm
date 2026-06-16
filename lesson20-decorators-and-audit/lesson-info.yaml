@@ -1,4 +1,3 @@
-type: framework
 content:
   - task01-why-decorators
   - task02-log-calls-decorator
