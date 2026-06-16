@@ -1,7 +1,15 @@
 type: edu
 files:
-  - name: task.py
+  - name: text.py
     visible: true
+    placeholders:
+      - offset: 3038
+        length: 49
+        placeholder_text: "f-string: upper category, dash, 4-digit zero-padded number,\
+      \ dash, upper size"
+      - offset: 3503
+        length: 43
+        placeholder_text: "upper-case category, int(number), upper-case size"
   - name: tests/test_task.py
     visible: false
     propagatable: false

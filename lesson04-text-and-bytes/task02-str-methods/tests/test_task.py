@@ -1,10 +1,35 @@
+"""Check for stage 2: the string method toolbox.
+
+Grading policy: validity, not wording. We check the cleaned/normalized output,
+not how you produced it.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Tests cover whitespace collapsing, casefold of mixed-case and non-ASCII (e.g. Straße), trimmed field splitting, and isdigit/removeprefix edge cases on messy input.
+import text
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestStringMethods(unittest.TestCase):
+    def test_clean_name_collapses_and_titlecases(self):
+        self.assertEqual(text.clean_name("  john   smith "), "John Smith")
+
+    def test_clean_name_single_word(self):
+        self.assertEqual(text.clean_name("WIDGET"), "Widget")
+
+    def test_normalize_key_casefolds_and_strips(self):
+        self.assertEqual(text.normalize_key("  Café "), "café")
+
+    def test_normalize_key_is_case_insensitive(self):
+        # casefold is more aggressive than lower: it folds the German sharp s,
+        # so "Straße" and "STRASSE" become the same key.
+        self.assertEqual(text.normalize_key("Straße"), text.normalize_key("STRASSE"))
+
+    def test_parse_csv_line_trims_fields(self):
+        self.assertEqual(text.parse_csv_line("a, b ,c"), ["a", "b", "c"])
+
+    def test_parse_csv_line_single_field(self):
+        self.assertEqual(text.parse_csv_line("solo"), ["solo"])
+
+
+if __name__ == "__main__":
+    unittest.main()

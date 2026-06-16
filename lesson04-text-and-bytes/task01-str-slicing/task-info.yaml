@@ -1,7 +1,17 @@
 type: edu
 files:
-  - name: task.py
+  - name: text.py
     visible: true
+    placeholders:
+      - offset: 400
+        length: 7
+        placeholder_text: slice the first n characters
+      - offset: 549
+        length: 8
+        placeholder_text: "slice the last n characters, using a negative start"
+      - offset: 664
+        length: 9
+        placeholder_text: slice with a step of -1 to reverse the string
   - name: tests/test_task.py
     visible: false
     propagatable: false

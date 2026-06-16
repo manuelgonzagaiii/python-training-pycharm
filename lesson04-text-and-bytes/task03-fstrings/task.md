@@ -1,35 +1,85 @@
-# f-strings and self-documenting debug output
+# Stage 3: f-strings and self-documenting output
 
-> **Phase:** Numbers, Text & Bytes  •  **Stage:** 4.3 of 11  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+You have used f-strings already to build simple messages. This stage goes deeper: running
+real expressions inside them, and the `{value=}` debug form that is one of the most
+useful small features in modern Python. These two helpers in `text.py` feed MiniERP's
+logging and, later, its receipt and CLI output.
 
-## What you'll learn
-- Interpolate expressions and method calls directly inside f-strings
-- Use the {expr=} self-documenting form for debugging and logging
-- Apply !r/!s/!a conversions inside an f-string
+## f-strings run expressions, not just names
 
-## Python features introduced
-`f-string interpolation`, `f-string expression evaluation {a+b}`, `self-documenting f-strings {value=}`, `nested quotes in f-strings`, `f-string with method calls {name.upper()}`, `multiline f-strings`, `conversion flags !r !s !a in f-strings`, `f-string over Decimal`
+An f-string is a string prefixed with `f`; anything inside `{ }` is **evaluated as
+Python**, not just substituted:
 
-## MiniERP increment
-Add `task.py` line-rendering helpers used by MiniERP logging and the future CLI: `debug_line(sku, qty, price)` emits a self-documenting `f"{sku=} {qty=} {price=}"` audit string, and `receipt_line(name, total)` interpolates a Decimal money value into a human line. Foundation for the CLI/receipt output.
+```
+>>> qty, price = 3, 9.99
+>>> f"{qty} x {price} = {qty * price}"
+'3 x 9.99 = 29.97'
+>>> f"line for {name.upper()}"     # method calls work too
+```
 
----
+You can also control how a value is rendered with a **conversion flag** before any format
+spec:
 
-<div class="hint" title="Author notes (remove when populated)">
+- `!r` uses `repr()` — quotes strings and shows types, ideal for debugging.
+- `!s` uses `str()` — the human-readable form (the default for plain `{x}`).
+- `!a` is like `!r` but ASCII-only.
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+```
+>>> name = "Café"
+>>> f"{name!r}"     # repr: quoted, escapes preserved
+"'Café'"
+```
 
-- **Starter idea:** from decimal import Decimal
+## The self-documenting `{value=}` form
 
-def debug_line(sku: str, qty: int, price: Decimal) -> str:
-    """Self-documenting debug string: sku='...' qty=... price=..."""
-    # TODO: f"{sku=} {qty=} {price=}"
-    raise NotImplementedError
+Put an `=` right after the expression and Python prints **both the expression text and its
+value** — perfect for logs and quick debugging:
 
-def receipt_line(name: str, total: Decimal) -> str:
-    """Render 'NAME: $TOTAL' using an f-string."""
-    # TODO: f-string interpolation
-    raise NotImplementedError
-- **Test focus:** Tests assert the exact self-documenting layout (e.g. "sku='AB-1' qty=3 price=9.99"), correct !r quoting, and that Decimal totals appear verbatim in the rendered line.
+```
+>>> sku, qty = "AB-1", 3
+>>> f"{sku=} {qty=}"
+"sku='AB-1' qty=3"
+```
+
+Notice `sku` came out **quoted** (`sku='AB-1'`): the `=` form uses `repr` by default, so
+you see the type at a glance. A `Decimal` shows as `price=Decimal('9.99')` — which is
+exactly what you want in a debug line, because it proves the value is a `Decimal` and not
+a stray float. (For human output you would instead use `!s` or a format spec, which is the
+next stage.)
+
+## Your task
+
+Fill in the two f-strings in `text.py`:
+
+1. `debug_line(sku, qty, price)` — a self-documenting line using the `{x=}` form for each
+   of `sku`, `qty`, and `price`.
+2. `receipt_line(name, total)` — a human line like `Widget: $9.99`, interpolating the name
+   and the `Decimal` total.
+
+## Worked example
+
+```
+>>> import text
+>>> from decimal import Decimal
+>>> text.debug_line("AB-1", 3, Decimal("9.99"))
+"sku='AB-1' qty=3 price=Decimal('9.99')"
+>>> text.receipt_line("Widget", Decimal("9.99"))
+'Widget: $9.99'
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: `debug_line` is self-documenting (each value labelled `name=`) and uses the
+  `repr` form, so `sku` appears quoted; `receipt_line` contains the name and the money as
+  `$9.99`.
+- Your free choice: spacing and the exact receipt layout, as long as the labelled debug
+  values and the `$`-prefixed total are present.
+
+<div class="hint" title="If you are stuck">
+
+`debug_line` is `f"{sku=} {qty=} {price=}"`. `receipt_line` is `f"{name}: ${total}"`.
 
 </div>
+
+Reference: Python documentation, "Lexical analysis — Formatted string literals" at
+docs.python.org.

@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: text.py
     visible: true
+    placeholders:
+      - offset: 1635
+        length: 17
+        placeholder_text: "f-string with a $ then a comma-grouped, 2-decimal float spec"
+      - offset: 1812
+        length: 25
+        placeholder_text: f-string with a nested spec using align then width
   - name: tests/test_task.py
     visible: false
     propagatable: false

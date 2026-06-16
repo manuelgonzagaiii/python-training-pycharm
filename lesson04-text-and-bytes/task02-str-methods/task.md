@@ -1,38 +1,73 @@
-# The string method toolbox
+# Stage 2: the string method toolbox
 
-> **Phase:** Numbers, Text & Bytes  •  **Stage:** 4.2 of 11  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+Real input is messy: extra spaces, inconsistent capitalisation, accented characters,
+comma-separated rows pasted from a spreadsheet. Before MiniERP can store or search a
+name, it has to clean it. Python's string methods do almost all of this without regular
+expressions, and you will reach for them constantly. This stage adds three input-cleaning
+helpers to `text.py`.
 
-## What you'll learn
-- Clean and normalize raw user input with strip/casefold and friends
-- Search, test, split, and join strings without regular expressions
-- Use removeprefix/removesuffix and translate for precise edits
+## The methods worth knowing now
 
-## Python features introduced
-`str.strip/lstrip/rstrip`, `str.lower/upper/casefold/title/capitalize/swapcase`, `str.startswith/endswith`, `str.find/rfind/index/count`, `str.replace`, `str.split/rsplit/splitlines/partition/rpartition`, `str.join`, `str.zfill/center/ljust/rjust`, `str.isdigit/isalpha/isalnum/isspace/isidentifier`, `str.removeprefix/removesuffix`, `str.translate/str.maketrans`, `str.expandtabs`
+Strings carry a large method surface. The ones this stage uses, grouped by job:
 
-## MiniERP increment
-Add MiniERP input-cleaning helpers to `task.py`: `clean_name(raw)` strips, collapses, and title-cases a customer/product name; `normalize_key(raw)` casefolds and strips for case-insensitive lookups; `parse_csv_line(line)` splits a simple delimited record. These are reused by import and search throughout the ERP.
+- **Trim and case:** `strip()` (also `lstrip`/`rstrip`) removes surrounding whitespace.
+  For case there is `lower()`, `upper()`, `title()`, `capitalize()` — and `casefold()`,
+  which is `lower()` taken further for reliable comparison (it folds tricky characters
+  like the German `ß` to `ss`, so `"Straße".casefold()` equals `"STRASSE".casefold()`).
+- **Split and join:** `split()` with no arguments splits on *runs* of whitespace and
+  drops empties, which is the cleanest way to collapse messy spacing; `split(",")` splits
+  on a delimiter; `" ".join(parts)` glues a list back together.
+- **Test and search:** `startswith` / `endswith`, `find` / `count`, and the `is...`
+  family (`isdigit`, `isalpha`, `isidentifier`, …) answer yes/no questions about content.
+- **Edit:** `replace(old, new)`, and the precise `removeprefix` / `removesuffix` (3.9+)
+  that strip an exact affix only if present.
 
----
+The collapse-whitespace idiom is worth memorising: `" ".join(raw.split())` turns
+`"  john   smith "` into `"john smith"` in one step — `split()` discards the runs of
+spaces, `join` puts single spaces back.
 
-<div class="hint" title="Author notes (remove when populated)">
+## casefold vs lower (why it matters for a key)
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+For *display*, `title()` or `lower()` is fine. For a **lookup key** — deciding whether two
+names are "the same" — use `casefold()`. It normalises case more aggressively than
+`lower()`, so case-insensitive matching works even on non-English text. Using `lower()`
+here would quietly fail to match some accented or non-Latin names.
 
-- **Starter idea:** def clean_name(raw: str) -> str:
-    """Trim, collapse internal whitespace, title-case."""
-    # TODO: strip + split + join + title
-    raise NotImplementedError
+## Your task
 
-def normalize_key(raw: str) -> str:
-    """Casefolded, stripped key for case-insensitive lookup."""
-    # TODO: strip + casefold
-    raise NotImplementedError
+Fill in the blanks in `text.py`:
 
-def parse_csv_line(line: str, sep: str = ",") -> list[str]:
-    """Split a delimited line into trimmed fields."""
-    # TODO: split + strip each field
-    raise NotImplementedError
-- **Test focus:** Tests cover whitespace collapsing, casefold of mixed-case and non-ASCII (e.g. Straße), trimmed field splitting, and isdigit/removeprefix edge cases on messy input.
+1. `clean_name(raw)` — collapse whitespace and title-case (`"  john  smith "` ->
+   `"John Smith"`).
+2. `normalize_key(raw)` — strip and casefold, for a case-insensitive lookup key.
+3. `parse_csv_line(line)` — split a comma-delimited line; each field is then trimmed for
+   you.
+
+## Worked example
+
+```
+>>> import text
+>>> text.clean_name("  john   smith ")
+'John Smith'
+>>> text.normalize_key("  Café ") == text.normalize_key("CAFÉ")
+True
+>>> text.parse_csv_line("a, b ,c")
+['a', 'b', 'c']
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: whitespace is collapsed and the name title-cased; the key is stripped and
+  casefolded (so `"Straße"` and `"STRASSE"` match); a delimited line splits into trimmed
+  fields.
+- Your free choice: which methods and order you use, as long as the output is right.
+
+<div class="hint" title="If you are stuck">
+
+`clean_name` is `" ".join(raw.split()).title()`. `normalize_key` is
+`raw.strip().casefold()`. For `parse_csv_line`, `line.split(",")` gives the fields.
 
 </div>
+
+Reference: Python documentation, "Text Sequence Type — str: String Methods" at
+docs.python.org.

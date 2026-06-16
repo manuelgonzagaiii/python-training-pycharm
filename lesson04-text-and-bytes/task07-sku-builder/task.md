@@ -1,33 +1,78 @@
-# Build and parse canonical SKUs
+# Stage 7: build and parse canonical SKUs
 
-> **Phase:** Numbers, Text & Bytes  •  **Stage:** 4.7 of 11  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+A SKU (stock-keeping unit) is the identifier that ties together inventory, sales, and
+reporting. If half the system writes `cat-42-xl` and the other half writes `CAT-0042-XL`,
+nothing matches and the data quietly rots. The fix is a **single canonical format** that
+one function produces and one function reads back — and that is what you build here. It
+ties together the slicing, methods, and format specs from the whole lesson.
 
-## What you'll learn
-- Compose a canonical identifier from parts using format specs and joins
-- Parse an identifier back into validated components
-- Validate identifier shape and raise clear errors on bad input
+The canonical SKU is `CAT-0042-XL`: an upper-case category, a **four-digit zero-padded**
+number, and an upper-case size, joined by dashes.
 
-## Python features introduced
-`f-string format-spec for zero-padding {n:0>4} / {n:04d}`, `str.upper/str.strip for normalization`, `str.split('-') and unpacking`, `str.zfill`, `str.isalnum validation`, `slicing for fixed segments`, `join with separators`, `ValueError for invalid input`
+## Building it: format specs do the normalizing
 
-## MiniERP increment
-Capstone identifier task: add `make_sku(category, number, size)` and `parse_sku(sku)` to `task.py`, producing/reading the canonical 'CAT-0042-XL' format (zero-padded number, upper-cased segments). This is the single SKU format the entire MiniERP (inventory, sales, reporting) standardizes on.
+`make_sku` composes the parts and normalizes them as it goes — the format-spec mini-language
+from stage 4 does the zero-padding, and `.upper()` from stage 2 the casing:
 
----
+```
+>>> f"{'cat'.upper()}-{42:04d}-{'xl'.upper()}"
+'CAT-0042-XL'
+```
 
-<div class="hint" title="Author notes (remove when populated)">
+`{number:04d}` means "this integer, base-10, at least 4 wide, zero-padded" — so `42`
+becomes `0042` and `7` becomes `0007`. Padding to a fixed width is what makes SKUs sort
+correctly and line up in a column.
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+## Parsing it back: split, then validate
 
-- **Starter idea:** def make_sku(category: str, number: int, size: str) -> str:
-    """Build 'CAT-0042-XL': upper category, 4-digit zero-padded number, upper size."""
-    # TODO: f"{category.upper()}-{number:04d}-{size.upper()}"
-    raise NotImplementedError
+`parse_sku` reverses the process and **validates** as it goes. Splitting on `-` and
+unpacking the parts is the easy half; the important half is rejecting bad input loudly:
 
-def parse_sku(sku: str) -> tuple[str, int, str]:
-    """Split into (category, number, size); raise ValueError if malformed."""
-    # TODO: split('-'), validate, int(number)
-    raise NotImplementedError
-- **Test focus:** Tests verify round-trip make_sku/parse_sku, zero-padding (number 42 -> '0042'), upper-casing, and that malformed SKUs (wrong segment count, non-numeric middle) raise ValueError.
+```
+>>> "CAT-0042-XL".split("-")
+['CAT', '0042', 'XL']
+```
+
+A real parser does not trust its input. If the SKU does not have exactly three parts, or
+the middle is not a number, the right move is to raise a clear `ValueError` rather than
+return something half-broken. The two guards are written for you; you supply the final
+normalization — upper-case the text parts and turn the number into an `int`.
+
+## Your task
+
+Fill in the two blanks in `text.py`:
+
+1. `make_sku(category, number, size)` — build `CAT-0042-XL` with an f-string: upper-case
+   the category and size, zero-pad the number to four digits.
+2. `parse_sku(sku)` — after the validity guards, return `(category, number, size)` with the
+   text parts upper-cased and the number converted to `int`.
+
+## Worked example
+
+```
+>>> import text
+>>> text.make_sku("cat", 42, "xl")
+'CAT-0042-XL'
+>>> text.parse_sku("CAT-0042-XL")
+('CAT', 42, 'XL')
+>>> text.parse_sku("CAT-0042")        # wrong shape
+ValueError: malformed SKU (need 3 dash-separated parts): 'CAT-0042'
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: the canonical format (upper-case, four-digit zero-padding); a clean round-trip
+  `make_sku` -> `parse_sku`; and a `ValueError` for the wrong segment count or a
+  non-numeric middle.
+- Your free choice: the exact error message wording, and how you build the string, as long
+  as the canonical output and the validation are correct.
+
+<div class="hint" title="If you are stuck">
+
+`make_sku` is `f"{category.upper()}-{number:04d}-{size.upper()}"`. For `parse_sku`, the
+final line is `category.upper(), int(number), size.upper()`.
 
 </div>
+
+Reference: Python documentation, "Format Specification Mini-Language" and "Text Sequence
+Type — str" at docs.python.org.

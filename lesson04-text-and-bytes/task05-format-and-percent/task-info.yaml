@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: text.py
     visible: true
+    placeholders:
+      - offset: 2047
+        length: 25
+        placeholder_text: fill the template's named fields from the data dict
+      - offset: 2226
+        length: 42
+        placeholder_text: build a Template and safe_substitute the values
   - name: tests/test_task.py
     visible: false
     propagatable: false

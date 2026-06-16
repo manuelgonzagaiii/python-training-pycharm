@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: text.py
     visible: true
+    placeholders:
+      - offset: 1336
+        length: 25
+        placeholder_text: "a self-documenting f-string with sku=, qty=, and price="
+      - offset: 1481
+        length: 19
+        placeholder_text: "an f-string: name, a colon, a dollar sign, then the total"
   - name: tests/test_task.py
     visible: false
     propagatable: false

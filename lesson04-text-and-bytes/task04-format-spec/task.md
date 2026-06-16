@@ -1,35 +1,84 @@
-# The format-spec mini-language
+# Stage 4: the format-spec mini-language
 
-> **Phase:** Numbers, Text & Bytes  •  **Stage:** 4.4 of 11  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+An f-string can do more than insert a value — after a colon you can give a **format spec**
+that controls width, alignment, padding, thousands separators, and decimal places. This is
+the little language behind every aligned table, every `$1,234.50`, every zero-padded
+number you will print. MiniERP's receipts, CLI tables, and reports all run on the two
+helpers you write here.
 
-## What you'll learn
-- Build aligned, fixed-width, zero-padded columns with format specs
-- Format currency with thousands separators and two decimals
-- Use dynamic (nested) width/precision fields
+## The shape of a format spec
 
-## Python features introduced
-`format-spec mini-language inside f-strings`, `alignment < > ^ and fill chars`, `width and precision .Nf`, `thousands separators , and _`, `sign control +/-/space`, `type codes f d x o b e %`, `{value:>{width}} dynamic width`, `padding numbers with 0`, `format() builtin`
+Inside `{value:spec}`, the spec reads (each part optional):
 
-## MiniERP increment
-Add MiniERP currency/column formatters to `task.py`: `fmt_money(amount)` renders a Decimal as `$1,234.50`, and `fmt_col(text, width, align)` produces aligned table cells. These power the CLI tables, receipts, and reports across the ERP.
+```
+[fill][align][sign][#][0][width][grouping][.precision][type]
+```
 
----
+The parts you will use most:
 
-<div class="hint" title="Author notes (remove when populated)">
+- **align**: `<` left, `>` right, `^` centre. A **fill** character can go before it
+  (`*^10` centres in 10 columns padded with `*`). `0` before the width zero-pads numbers.
+- **width**: the minimum number of columns.
+- **grouping**: `,` inserts thousands commas (`_` groups with underscores).
+- **.precision** with type **`f`**: fixed-point with that many decimals. Other types:
+  `d` integer, `x`/`o`/`b` hex/octal/binary, `%` percentage, `e` scientific.
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+```
+>>> f"{1234.5:,.2f}"      # comma grouping, two decimals
+'1,234.50'
+>>> f"{'Hi':>8}"          # right-align in 8 columns
+'      Hi'
+>>> f"{7:03d}"            # zero-pad an int to width 3
+'007'
+```
 
-- **Starter idea:** from decimal import Decimal
+A `Decimal` honours the same spec, so `f"{amount:,.2f}"` formats money correctly without
+ever converting to float.
 
-def fmt_money(amount: Decimal) -> str:
-    """Format as $#,##0.00 using the format-spec mini-language."""
-    # TODO: f"${amount:,.2f}"
-    raise NotImplementedError
+## Dynamic (nested) fields
 
-def fmt_col(text: str, width: int, align: str = "<") -> str:
-    """Pad/align text to width; align is '<', '>', or '^'."""
-    # TODO: f"{text:{align}{width}}"
-    raise NotImplementedError
-- **Test focus:** Tests check thousands separators and 2-decimal precision (1234.5 -> '$1,234.50'), each alignment mode, dynamic width, and zero-padding behavior.
+Width and precision can themselves come from variables, by nesting `{ }` inside the spec.
+This is how you align to a width computed at runtime:
+
+```
+>>> width, align = 10, "^"
+>>> f"{'Hi':{align}{width}}"     # centre in a width decided by code
+'    Hi    '
+```
+
+## Your task
+
+Fill in the two format specs in `text.py`:
+
+1. `fmt_money(amount)` — render a `Decimal` as `$1,234.50`: a literal `$`, then comma
+   grouping and two decimals.
+2. `fmt_col(value, width, align)` — pad and align `value` to `width`, where `align` is one
+   of `<`, `>`, `^` chosen at runtime (a nested field).
+
+## Worked example
+
+```
+>>> import text
+>>> from decimal import Decimal
+>>> text.fmt_money(Decimal("1234.5"))
+'$1,234.50'
+>>> text.fmt_col("Hi", 6, "^")
+'  Hi  '
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: `fmt_money` produces a leading `$`, thousands commas, and exactly two
+  decimals (`1234.5` -> `$1,234.50`, `1000000` -> `$1,000,000.00`); `fmt_col` pads to the
+  given width and honours each alignment.
+- Your free choice: how you write the spec, as long as the output matches. The format-spec
+  form and an equivalent built using `str.format()` or `format()` would both be accepted.
+
+<div class="hint" title="If you are stuck">
+
+`fmt_money` is `f"${amount:,.2f}"`. `fmt_col` nests the alignment and width:
+`f"{value:{align}{width}}"`.
 
 </div>
+
+Reference: Python documentation, "Format Specification Mini-Language" at docs.python.org.

@@ -1,10 +1,33 @@
+"""Check for stage 4: the format-spec mini-language.
+
+Grading policy: validity, not wording. We check the produced strings.
+"""
+
 import unittest
+from decimal import Decimal
 
-# TODO(author): replace with real checks.
-# Test focus: Tests check thousands separators and 2-decimal precision (1234.5 -> '$1,234.50'), each alignment mode, dynamic width, and zero-padding behavior.
+import text
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestFormatSpec(unittest.TestCase):
+    def test_fmt_money_thousands_and_cents(self):
+        self.assertEqual(text.fmt_money(Decimal("1234.5")), "$1,234.50")
+
+    def test_fmt_money_zero(self):
+        self.assertEqual(text.fmt_money(Decimal("0")), "$0.00")
+
+    def test_fmt_money_millions(self):
+        self.assertEqual(text.fmt_money(Decimal("1000000")), "$1,000,000.00")
+
+    def test_fmt_col_left_is_default(self):
+        self.assertEqual(text.fmt_col("Hi", 5), "Hi   ")
+
+    def test_fmt_col_right(self):
+        self.assertEqual(text.fmt_col("Hi", 5, ">"), "   Hi")
+
+    def test_fmt_col_center(self):
+        self.assertEqual(text.fmt_col("Hi", 6, "^"), "  Hi  ")
+
+
+if __name__ == "__main__":
+    unittest.main()

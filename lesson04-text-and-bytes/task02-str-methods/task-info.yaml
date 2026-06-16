@@ -1,7 +1,17 @@
 type: edu
 files:
-  - name: task.py
+  - name: text.py
     visible: true
+    placeholders:
+      - offset: 789
+        length: 29
+        placeholder_text: "join the words from raw.split() with single spaces, then .title()"
+      - offset: 935
+        length: 22
+        placeholder_text: "strip the text, then casefold it"
+      - offset: 1086
+        length: 15
+        placeholder_text: split the line on commas
   - name: tests/test_task.py
     visible: false
     propagatable: false
