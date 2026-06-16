@@ -1,10 +1,29 @@
+"""Check for task01-dict-by-sku.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: index_by_sku maps each sku to the correct record; iteration order matches the input list; lookup of a known sku succeeds and `in` works for present/absent skus.
+import catalog
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestIndex(unittest.TestCase):
+    def test_maps_sku_to_record(self):
+        cat = catalog.seed_catalog()
+        idx = catalog.index_by_sku(cat)
+        for p in cat:
+            self.assertEqual(idx[p[0]], p)
+
+    def test_preserves_insertion_order(self):
+        cat = catalog.seed_catalog()
+        self.assertEqual(list(catalog.index_by_sku(cat)), [p[0] for p in cat])
+
+    def test_membership(self):
+        idx = catalog.index_by_sku(catalog.seed_catalog())
+        self.assertIn("A-001", idx)
+        self.assertNotIn("ZZZ", idx)
+
+
+if __name__ == "__main__":
+    unittest.main()

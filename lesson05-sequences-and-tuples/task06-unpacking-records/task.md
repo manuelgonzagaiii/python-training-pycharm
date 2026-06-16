@@ -1,36 +1,84 @@
-# Unpacking records, starred targets & swaps
+# Stage 6: unpacking records, starred targets, and swaps
 
-> **Phase:** Built-in Data Structures: The In-Memory Catalog & Inventory  •  **Stage:** 5.6 of 6  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+A record is a tuple of four fields, and reaching them by index — `product[0]`, `product[2]`
+— is both ugly and easy to get wrong. **Unpacking** pulls the fields into named variables in
+one line, and it scales from a single record to splitting a whole list. This stage finishes
+`catalog.py` for the lesson with two functions built on it.
 
-## What you'll learn
-- Destructure a product tuple into sku, name, price, qty in one line
-- Use a starred target to split head/tail or init/last of the catalog
-- Discard unwanted fields with _ and unpack inside for-loops
-- Swap two values without a temp variable
+## Unpacking a record
 
-## Python features introduced
-`iterable unpacking`, `multiple assignment`, `starred target *rest`, `ignore with _`, `nested unpacking`, `swap via a, b = b, a`, `unpacking in for-loops`, `head/*tail and *init/last idioms`
+Put a tuple of names on the left of `=` and Python distributes the fields:
 
-## MiniERP increment
-Adds describe(product) (unpacks a record into a readable label using the Money/text utilities from earlier phases) and split_featured(catalog) returning (first, *rest) — featured product plus the remainder for a 'rest of catalog' view.
+```
+>>> sku, name, price_cents, qty = ("A-1", "Widget", 999, 5)
+>>> name, qty
+('Widget', 5)
+```
 
----
+The number of names must match the number of fields. This reads far better than
+`product[0]`, `product[1]`, ... and it makes the field meanings obvious. It also works
+directly in a `for` loop, so you can unpack each record as you iterate:
 
-<div class="hint" title="Author notes (remove when populated)">
+```
+>>> for sku, name, price_cents, qty in catalog:
+...     ...
+```
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+If you do not need a field, the convention is to unpack it into `_`: `sku, _, price, _ =
+record`. And unpacking gives you the cleanest **swap** in any language — no temporary
+variable: `a, b = b, a`.
 
-- **Starter idea:** # catalog.py (continued)
-from money import format_money  # reused from an earlier phase
+## Starred targets: head and tail
 
-def describe(product: Product) -> str:
-    """Unpack the record and return e.g. 'SKU123 — Widget (USD 9.99), qty 5'."""
-    sku, name, price_cents, qty = product
-    ...
+A `*name` target soaks up "all the rest" as a **list**, so you can split a sequence into
+parts in one line:
 
-def split_featured(catalog: list[Product]) -> tuple[Product, list[Product]]:
-    """Return (first_product, rest_of_catalog) using a starred target."""
-    ...
-- **Test focus:** describe unpacks all four fields into the expected formatted string (money via the reused util); split_featured returns the head record and a list of the remaining records, with rest being a list.
+```
+>>> first, *rest = [10, 20, 30, 40]
+>>> first, rest
+(10, [20, 30, 40])
+>>> *init, last = [10, 20, 30, 40]
+>>> init, last
+([10, 20, 30], 40)
+```
+
+MiniERP uses this to peel a "featured" product off the front of the catalog and keep the
+remainder for a "rest of catalog" view.
+
+## Your task
+
+In `catalog.py`, fill in:
+
+1. `describe(product)` — unpack the record into `sku, name, price_cents, qty` (the formatted
+   return line is written for you).
+2. `split_featured(catalog)` — unpack the list into `first` and a starred `*rest`.
+
+## Worked example
+
+```
+>>> import catalog
+>>> catalog.describe(catalog.make_product("A-001", "Widget", 999, 5))
+'A-001 Widget $9.99 qty 5'
+>>> featured, rest = catalog.split_featured(catalog.seed_catalog())
+>>> featured
+('A-001', 'Widget', 999, 5)
+>>> rest                       # a list of the remaining records
+[('A-002', 'Gadget', 1499, 0), ('B-010', 'Gizmo', 250, 12)]
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: `describe` includes all four fields with the price shown in dollars (e.g. `999`
+  -> `9.99`); `split_featured` returns the first record and the rest **as a list**.
+- Your free choice: the exact label layout in `describe` is fixed here only because the line
+  is provided; your job is the unpacking that feeds it.
+
+<div class="hint" title="If you are stuck">
+
+`describe` starts with `sku, name, price_cents, qty = product`. `split_featured` is
+`first, *rest = catalog`.
 
 </div>
+
+Reference: Python documentation, "Assignment statements — unpacking and starred targets" at
+docs.python.org.

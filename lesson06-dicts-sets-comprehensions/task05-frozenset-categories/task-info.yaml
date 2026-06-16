@@ -1,7 +1,11 @@
 type: edu
 files:
-  - name: task.py
+  - name: catalog.py
     visible: true
+    placeholders:
+      - offset: 3885
+        length: 15
+        placeholder_text: a hashable frozenset of this product's tags
   - name: tests/test_task.py
     visible: false
     propagatable: false

@@ -1,10 +1,28 @@
+"""Check for task04-tags-as-sets.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: products_with_all_tags returns only skus whose tags >= required (superset test); products_with_any_tags returns skus with non-empty intersection; both return sets, and empty inputs behave sensibly.
+import catalog
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+TAGS = {"A": {"new", "sale"}, "B": {"sale"}, "C": {"clearance"}}
+
+
+class TestTagSets(unittest.TestCase):
+    def test_all_tags_superset(self):
+        self.assertEqual(catalog.products_with_all_tags(TAGS, {"sale"}), {"A", "B"})
+        self.assertEqual(catalog.products_with_all_tags(TAGS, {"new", "sale"}), {"A"})
+
+    def test_any_tags_intersection(self):
+        self.assertEqual(catalog.products_with_any_tags(TAGS, {"clearance", "new"}), {"A", "C"})
+
+    def test_results_are_sets(self):
+        self.assertIsInstance(catalog.products_with_all_tags(TAGS, {"sale"}), set)
+        self.assertIsInstance(catalog.products_with_any_tags(TAGS, {"sale"}), set)
+
+
+if __name__ == "__main__":
+    unittest.main()

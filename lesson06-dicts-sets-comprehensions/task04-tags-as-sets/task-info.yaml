@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: catalog.py
     visible: true
+    placeholders:
+      - offset: 3266
+        length: 16
+        placeholder_text: tags is a superset of required
+      - offset: 3576
+        length: 13
+        placeholder_text: tags intersects wanted (non-empty &)
   - name: tests/test_task.py
     visible: false
     propagatable: false

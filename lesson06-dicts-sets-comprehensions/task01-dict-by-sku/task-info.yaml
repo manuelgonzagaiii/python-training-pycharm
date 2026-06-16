@@ -1,7 +1,11 @@
 type: edu
 files:
-  - name: task.py
+  - name: catalog.py
     visible: true
+    placeholders:
+      - offset: 2258
+        length: 27
+        placeholder_text: "store this product under its sku (product[0]) in index"
   - name: tests/test_task.py
     visible: false
     propagatable: false

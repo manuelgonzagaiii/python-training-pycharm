@@ -1,7 +1,11 @@
 type: edu
 files:
-  - name: task.py
+  - name: catalog.py
     visible: true
+    placeholders:
+      - offset: 1220
+        length: 13
+        placeholder_text: a shallow copy of the catalog list
   - name: tests/test_task.py
     visible: false
     propagatable: false

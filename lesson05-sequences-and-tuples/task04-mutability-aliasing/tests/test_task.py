@@ -1,10 +1,28 @@
+"""Check for stage 4: aliasing vs copying.
+
+Grading policy: validity, not wording. We check that the snapshot is an
+independent list with equal contents.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: snapshot_catalog returns a different list object (distinct id) with equal contents; appending to the snapshot leaves the original length unchanged.
+import catalog
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestSnapshot(unittest.TestCase):
+    def test_snapshot_is_a_distinct_object(self):
+        cat = catalog.seed_catalog()
+        snap = catalog.snapshot_catalog(cat)
+        self.assertIsNot(snap, cat, "snapshot must be a new list, not the same object")
+        self.assertEqual(snap, cat, "but with equal contents")
+
+    def test_mutating_snapshot_leaves_source_unchanged(self):
+        cat = catalog.seed_catalog()
+        n = len(cat)
+        snap = catalog.snapshot_catalog(cat)
+        snap.append(catalog.make_product("Z-9", "New", 100, 1))
+        self.assertEqual(len(cat), n, "appending to the snapshot must not grow the source")
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: catalog.py
     visible: true
+    placeholders:
+      - offset: 1725
+        length: 37
+        placeholder_text: "unpack the record into sku, name, price_cents, qty"
+      - offset: 2021
+        length: 22
+        placeholder_text: unpack the head into first and the tail into a starred rest
   - name: tests/test_task.py
     visible: false
     propagatable: false

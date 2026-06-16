@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: catalog.py
     visible: true
+    placeholders:
+      - offset: 1427
+        length: 27
+        placeholder_text: "slice from start, taking size items"
+      - offset: 1579
+        length: 18
+        placeholder_text: "the last n records, reversed so newest is first"
   - name: tests/test_task.py
     visible: false
     propagatable: false

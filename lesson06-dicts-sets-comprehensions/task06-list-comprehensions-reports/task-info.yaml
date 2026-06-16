@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: catalog.py
     visible: true
+    placeholders:
+      - offset: 4095
+        length: 58
+        placeholder_text: "a list comprehension of products with product[3] (qty) < threshold"
+      - offset: 4290
+        length: 35
+        placeholder_text: "a list comprehension of each product's name (product[1])"
   - name: tests/test_task.py
     visible: false
     propagatable: false

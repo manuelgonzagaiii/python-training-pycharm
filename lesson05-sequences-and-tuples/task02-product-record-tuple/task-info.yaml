@@ -1,7 +1,11 @@
 type: edu
 files:
-  - name: task.py
+  - name: catalog.py
     visible: true
+    placeholders:
+      - offset: 576
+        length: 29
+        placeholder_text: a tuple of the four fields in order
   - name: tests/test_task.py
     visible: false
     propagatable: false

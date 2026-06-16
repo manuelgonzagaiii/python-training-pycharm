@@ -1,7 +1,11 @@
 type: edu
 files:
-  - name: task.py
+  - name: catalog.py
     visible: true
+    placeholders:
+      - offset: 3008
+        length: 16
+        placeholder_text: merge base and overrides with | (overrides win)
   - name: tests/test_task.py
     visible: false
     propagatable: false

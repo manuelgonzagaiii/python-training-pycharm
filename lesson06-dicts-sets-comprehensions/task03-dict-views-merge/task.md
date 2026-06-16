@@ -1,28 +1,64 @@
-# Dict views and the | merge operator
+# Stage 3: merging dicts with the | operator
 
-> **Phase:** Built-in Data Structures: The In-Memory Catalog & Inventory  •  **Stage:** 6.3 of 7  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+MiniERP often needs to layer one set of values over another: a base price list with a
+few promotional overrides, default settings with a customer's custom settings, a saved
+catalog with edits made this session. The question is always the same — combine two dicts
+so that the second one wins on any key they share.
 
-## What you'll learn
-- Iterate a dict with .items() and understand views are dynamic
-- Merge two dicts with | and |= and know that the right operand wins on conflicts
-- Compare the | operator with the {**a, **b} spread form
+Since Python 3.9 the merge operator `|` does this directly:
 
-## Python features introduced
-`dict.keys/values/items views`, `live view semantics`, `iterating items()`, `dict union operator |`, `in-place |=`, `PEP 584`, `later-key-wins merge rule`, `dict() and {**a, **b} merging`
+```
+>>> base = {"A": 1, "B": 2}
+>>> over = {"B": 20, "C": 30}
+>>> base | over
+{'A': 1, 'B': 20, 'C': 30}
+```
 
-## MiniERP increment
-Adds apply_overrides(base, overrides) that merges a price/qty override dict onto the base index with |, used later when importing updated catalog data. Reports can now overlay changes without mutating the source.
+Read it left to right: start from `base`, then apply `over`. Keys only in `base` survive,
+keys only in `over` are added, and where they collide the **right-hand** value wins
+(`B` becomes 20). This is the modern, readable replacement for the older
+`{**base, **over}` spread and for `dict(base, **over)`; both still work, but `|` says
+"merge" plainly.
 
----
+One property to hold onto: `base | over` builds a **new** dict and leaves both operands
+untouched. That matters when `base` is shared state you must not corrupt. (There is also
+`|=`, which merges *in place* into the left dict — use that only when you intend to mutate
+it.)
 
-<div class="hint" title="Author notes (remove when populated)">
+## Your task
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+In `catalog.py`, finish `apply_overrides(base, overrides)` so it returns a new dict where
+entries in `overrides` replace matching entries in `base`. One expression with `|`.
 
-- **Starter idea:** # catalog.py (continued)
-def apply_overrides(base: dict[str, Product], overrides: dict[str, Product]) -> dict[str, Product]:
-    """Return a new dict where overrides replace matching base entries (| merge)."""
-    ...
-- **Test focus:** apply_overrides returns a merged dict where overlapping keys take the override value and non-overlapping keys from both survive; the original base dict is not mutated.
+## Worked example
+
+```
+>>> import catalog
+>>> base = {"A-1": ("A-1", "Old", 100, 1)}
+>>> over = {"A-1": ("A-1", "New", 200, 2), "B-1": ("B-1", "Extra", 50, 9)}
+>>> merged = catalog.apply_overrides(base, over)
+>>> merged["A-1"]
+('A-1', 'New', 200, 2)
+>>> "B-1" in merged
+True
+>>> base["A-1"]            # the original is left intact
+('A-1', 'Old', 100, 1)
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: on a shared key the override wins; keys unique to either side all survive; the
+  original `base` is not mutated.
+- Your free choice: which merge spelling you use. `base | overrides` is the modern form,
+  but `{**base, **overrides}` produces the same result and also passes — the check grades
+  the result, not the syntax.
+
+<div class="hint" title="If you are stuck">
+
+Return `base | overrides`. The order matters: the right operand wins on shared keys, so
+`overrides` must be on the right.
 
 </div>
+
+Reference: Python documentation, "Mapping Types — dict" (the `|` and `|=` operators, PEP
+584) at docs.python.org.

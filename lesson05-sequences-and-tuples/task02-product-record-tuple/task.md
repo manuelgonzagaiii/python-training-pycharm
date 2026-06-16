@@ -1,31 +1,70 @@
-# Model a product as a tuple record
+# Stage 2: model a product as a tuple record
 
-> **Phase:** Built-in Data Structures: The In-Memory Catalog & Inventory  •  **Stage:** 5.2 of 6  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+Time to build. This stage creates `catalog.py` and the atomic unit of the whole phase: a
+single product, stored as a **tuple record**. Every later function — the list, the dict
+index, the reports — manipulates these records, so getting the shape right matters.
 
-## What you'll learn
-- Create fixed-shape records as tuples (sku, name, price_cents, qty)
-- Access fields by index and understand why a tuple communicates 'fixed shape'
-- Define a PEP 695 type alias to name the record shape once
-- Prove immutability by attempting (and catching) item assignment
+## Why a tuple for a record
 
-## Python features introduced
-`tuple`, `tuple literal`, `tuple packing`, `indexing`, `len()`, `tuple is immutable`, `type hints with tuple[...]`, `PEP 695 type alias for the record shape`
+A product always has the same four fields in the same order: `(sku, name, price_cents,
+qty)`. That **fixed shape** is exactly what a tuple expresses. Two payoffs:
 
-## MiniERP increment
-Adds make_product() returning a 4-field tuple record and a Product type alias to catalog.py — the atomic unit every later task in the phase manipulates.
+- **Immutability.** A tuple cannot be changed after it is built, so a record can never be
+  half-edited by a stray line of code. To "change" a product you build a *new* record —
+  which keeps history honest.
+- **It can be a key later.** Because tuples are immutable (and hashable), a record — or part
+  of one — can be a dict key or a set member. Lists cannot. You will rely on this in the
+  next lessons.
 
----
+Building a tuple is just commas; the parentheses are optional but worth keeping for clarity:
 
-<div class="hint" title="Author notes (remove when populated)">
+```
+>>> ("A-1", "Widget", 999, 5)
+('A-1', 'Widget', 999, 5)
+```
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+Access fields by index, the way you indexed strings: `record[0]` is the sku, `record[2]` is
+the price in cents.
 
-- **Starter idea:** # catalog.py
+## Naming the shape once: a type alias
+
+Writing `tuple[str, str, int, int]` everywhere is noise, and it does not say what the fields
+*mean*. A **type alias** names the shape in one place. Modern Python (3.12+) writes it with
+the `type` keyword:
+
+```python
 type Product = tuple[str, str, int, int]  # (sku, name, price_cents, qty)
+```
 
-def make_product(sku: str, name: str, price_cents: int, qty: int) -> Product:
-    """Return a product as an immutable tuple record."""
-    ...
-- **Test focus:** make_product returns a 4-tuple in the right field order; the result is a tuple (immutable); indexing yields the expected sku/name/price/qty.
+Now every function can say `-> Product` and a reader knows precisely what that is. (The
+older way was `Product = tuple[str, str, int, int]` as a plain assignment; the `type`
+statement is the current, clearer form.)
+
+## Your task
+
+In `catalog.py`, fill in `make_product` so it returns the four fields as a tuple record in
+order `(sku, name, price_cents, qty)`.
+
+## Worked example
+
+```
+>>> import catalog
+>>> catalog.make_product("A-1", "Widget", 999, 5)
+('A-1', 'Widget', 999, 5)
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: the result is a 4-element `tuple` in the correct field order, and it is
+  immutable (assigning to an element raises).
+- Your free choice: nothing much here — the record shape is the contract the whole phase
+  depends on.
+
+<div class="hint" title="If you are stuck">
+
+Return the four parameters as a tuple: `(sku, name, price_cents, qty)`.
 
 </div>
+
+Reference: Python documentation, "Sequence Types — Tuples" and "type statement (PEP 695)" at
+docs.python.org.

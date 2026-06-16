@@ -1,30 +1,70 @@
-# ChainMap: layered config and multi-location stock
+# Stage 6: layered lookups with ChainMap
 
-> **Phase:** Built-in Data Structures: The In-Memory Catalog & Inventory  •  **Stage:** 7.6 of 9  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+Stock levels in MiniERP come in layers. There is a baseline — the default level for every
+SKU — and on top of it, overrides: a warehouse adjustment, a held-for-an-order reservation,
+a manual correction. A lookup should check the override layers first and fall back to the
+default only when no override applies.
 
-## What you'll learn
-- Stack multiple mappings so lookups fall through from most- to least-specific
-- Layer per-warehouse overrides over a default stock map without copying
-- Use new_child to add a scratch layer; know writes only touch the top map
+You could merge the layers into one dict with `|`, but merging **copies** everything and
+freezes a snapshot — change an underlying layer afterwards and the merged copy is stale.
+`collections.ChainMap` takes a different approach: it groups several dicts and **searches
+them in order** without copying. A lookup walks the layers left to right and returns the
+first one that has the key:
 
-## Python features introduced
-`collections.ChainMap`, `lookup falls through layers`, `first-map-wins`, `new_child`, `maps attribute`, `writes hit only the first map`, `ChainMap for layered settings`
+```
+>>> from collections import ChainMap
+>>> defaults = {"A": 10, "B": 5}
+>>> warehouse = {"A": 3}
+>>> stock = ChainMap(warehouse, defaults)   # warehouse searched first, then defaults
+>>> stock["A"]      # found in warehouse -> the override wins
+3
+>>> stock["B"]      # not in warehouse -> falls through to defaults
+5
+```
 
-## MiniERP increment
-Adds effective_stock(default_levels, *warehouse_overrides) returning a ChainMap so a SKU resolves to its warehouse-specific level or the default — the multi-location inventory view, also reused later for layered config (defaults < file < env).
+Two things follow from "searches, does not copy". First, **order is the priority**: the
+earliest map that contains the key wins, so put the highest-priority override first.
+Second, the underlying dicts are referenced live — edit `defaults` later and the ChainMap
+sees the change immediately, and writing through the ChainMap only ever touches its *first*
+map, leaving the rest untouched. That makes it ideal for layered configuration and
+scoped settings, not just stock.
 
----
+In this function the signature is `effective_stock(default_levels, *overrides)`. The
+`*overrides` collects any number of override dicts into a tuple. You want every override
+searched **before** the default, so the ChainMap is built from the spread overrides first,
+then the default last.
 
-<div class="hint" title="Author notes (remove when populated)">
+## Your task
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+In `catalog.py`, finish `effective_stock(default_levels, *overrides)`. Return a `ChainMap`
+that searches the `overrides` first (in the order given) and `default_levels` last.
 
-- **Starter idea:** # catalog.py (continued)
-from collections import ChainMap
+## Worked example
 
-def effective_stock(default_levels: dict[str, int], *overrides: dict[str, int]) -> ChainMap:
-    """Layer overrides over defaults; earlier overrides win on conflicts."""
-    ...
-- **Test focus:** effective_stock resolves a sku to the highest-priority layer that defines it, falling back to defaults; an override layer shadows the default; keys present only in defaults still resolve.
+```
+>>> import catalog
+>>> eff = catalog.effective_stock({"A": 10, "B": 5}, {"A": 3})
+>>> eff["A"], eff["B"]       # A overridden, B from the default
+(3, 5)
+>>> eff2 = catalog.effective_stock({"A": 1}, {"A": 2}, {"A": 3})
+>>> eff2["A"]                # first override argument is searched first
+2
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: an override shadows the default for the same SKU; a SKU with no override falls
+  through to the default; when several overrides are passed, the earlier argument is found
+  first; the default dict is not mutated.
+- Your free choice: how many override layers the caller passes is up to them. The fixed
+  rule is the search order — overrides ahead of the default.
+
+<div class="hint" title="If you are stuck">
+
+Spread the collected overrides ahead of the default:
+`ChainMap(*overrides, default_levels)`. The `*` unpacks the overrides tuple into separate
+maps.
 
 </div>
+
+Reference: Python documentation, "collections.ChainMap" at docs.python.org.

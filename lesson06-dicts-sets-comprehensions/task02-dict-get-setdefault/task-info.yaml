@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: catalog.py
     visible: true
+    placeholders:
+      - offset: 2452
+        length: 14
+        placeholder_text: "get sku from index, defaulting to None"
+      - offset: 2740
+        length: 47
+        placeholder_text: "append product to the category's list, creating it with setdefault"
   - name: tests/test_task.py
     visible: false
     propagatable: false
