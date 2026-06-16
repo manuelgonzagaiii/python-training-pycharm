@@ -1,29 +1,53 @@
-# Why 0.1 + 0.2 != 0.3
+# Stage 2: why 0.1 + 0.2 != 0.3
 
-> **Phase:** Numbers, Text & Bytes  •  **Stage:** 3.2 of 7  •  **Type:** `choice`  •  **Status:** skeleton (to be populated)
+This is a knowledge check, not a coding task — but it decides the most important design
+choice in the whole phase. Read it, then pick the one correct answer.
 
-## What you'll learn
-- Internalize that binary float cannot represent most decimal fractions exactly
-- Know that == on floats is unreliable and money must never be a float
-- Recognize math.isclose as the tolerant comparison and why it is still wrong for currency
+## The result that breaks naive money code
 
-## Python features introduced
-`float binary representation pitfalls`, `0.1 + 0.2 == 0.3 is False`, `math.isclose() for tolerant float comparison`, `float.is_integer()`, `float special values (float('inf'), float('nan'))`, `repr vs str of floats`
+```
+>>> 0.1 + 0.2
+0.30000000000000004
+>>> 0.1 + 0.2 == 0.3
+False
+```
 
-## MiniERP increment
-Knowledge check that justifies the phase's central ERP decision (money uses Decimal). No code change; the correct mental model gates the Decimal refactor in later tasks.
+A `float` is a binary fraction with a fixed number of bits. Most decimal fractions —
+including `0.1`, `0.2`, and `0.3` — **have no exact binary representation**, the same
+way `1/3` has no exact decimal representation (`0.3333...`). So the computer stores the
+nearest binary value it can, and the tiny errors add up. This is true in every
+mainstream language; it is the IEEE-754 standard doing exactly what it promises, not a
+bug.
 
----
+## Why this is fatal for money
 
-<div class="hint" title="Author notes (remove when populated)">
+Money is **exact**. An invoice is paid or it is not; a balance is zero to the cent or it
+is not. If prices are floats, then `subtotal == amount_paid` can be `False` even when
+the customer paid the right amount, purely because of representation error. Cents go
+missing. Auditors do not accept "off by 0.00000000004."
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+People reach for two "fixes" that are still wrong for currency:
 
-- **Starter idea:** # Multiple-choice task. Learner evaluates statements such as:
-#   - What does (0.1 + 0.2 == 0.3) evaluate to?
-#   - Which is the right way to store a $19.99 price for an invoice?
-#   - Is math.isclose() acceptable for deciding if an invoice is fully paid?
-# Answers are encoded in the EduTools task config, not in task.py.
-- **Test focus:** Choice task: a single correct option (float == is False; money must use Decimal; isclose is unsuitable for exact currency).
+- `math.isclose(a, b)` asks "are these *close enough*?" That is right for measurements
+  and physics, but money is not about "close enough" — a payment that is one cent short
+  is short, full stop. `isclose` would call it paid.
+- Rounding floats before comparing hides the symptom but keeps the disease: you are
+  still doing arithmetic on inexact values, so errors still accumulate across many lines.
 
-</div>
+A couple of `float` facts worth knowing even though we avoid floats for money:
+`(2.0).is_integer()` is `True`, and floats have special values `float('inf')` and
+`float('nan')` — and `nan` is never equal to anything, even itself.
+
+## The decision
+
+MiniERP stores money as **`decimal.Decimal`, built from strings**, and compares it with
+plain `==`. `Decimal('0.1') + Decimal('0.2') == Decimal('0.3')` is `True`, exactly, with
+no tolerance needed. You will build that money helper in stage 6. This quiz is the gate:
+get the reasoning right here, and the Decimal refactor later will feel obvious.
+
+## Question
+
+MiniERP must decide whether an invoice for `$19.99` has been **paid in full**. Which
+approach is correct?
+
+Pick the single best answer below, then press **Check**.

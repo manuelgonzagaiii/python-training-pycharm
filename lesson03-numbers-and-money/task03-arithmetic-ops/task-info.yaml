@@ -1,7 +1,17 @@
 type: edu
 files:
-  - name: task.py
+  - name: money.py
     visible: true
+    placeholders:
+      - offset: 560
+        length: 23
+        placeholder_text: one built-in returning both quotient and remainder
+      - offset: 922
+        length: 14
+        placeholder_text: floor-divide total by parts
+      - offset: 953
+        length: 13
+        placeholder_text: total modulo parts
   - name: tests/test_task.py
     visible: false
     propagatable: false

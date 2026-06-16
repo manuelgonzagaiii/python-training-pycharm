@@ -1,3 +1,12 @@
 type: choice
 is_multiple_choice: false
+options:
+  - text: Store amounts as Decimal built from strings and compare with ==
+    is_correct: true
+  - text: Store amounts as float and compare with ==
+    is_correct: false
+  - text: Store amounts as float and compare with math.isclose()
+    is_correct: false
+  - text: Store amounts as float, round to 2 places, then compare with ==
+    is_correct: false
 local_check: true
