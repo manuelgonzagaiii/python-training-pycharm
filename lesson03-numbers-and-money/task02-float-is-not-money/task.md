@@ -28,9 +28,11 @@ missing. Auditors do not accept "off by 0.00000000004."
 
 People reach for two "fixes" that are still wrong for currency:
 
-- `math.isclose(a, b)` asks "are these *close enough*?" That is right for measurements
-  and physics, but money is not about "close enough" — a payment that is one cent short
-  is short, full stop. `isclose` would call it paid.
+- `math.isclose(a, b)` asks "are these *close enough*?" That is the right question for a
+  measurement and the wrong one for money, where a payment one cent short is short, full
+  stop. Worse, its tolerance is *relative* to the size of the numbers, so on a large
+  enough invoice it will accept a one-cent shortfall as "close" — and the floats it
+  compares have already drifted besides.
 - Rounding floats before comparing hides the symptom but keeps the disease: you are
   still doing arithmetic on inexact values, so errors still accumulate across many lines.
 

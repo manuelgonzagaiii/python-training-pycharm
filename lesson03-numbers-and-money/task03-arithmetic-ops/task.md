@@ -11,8 +11,9 @@ Most languages have one `/`. Python has two, on purpose:
 
 - `/` is **true division** and **always returns a float**: `7 / 2` is `3.5`, and even
   `6 / 2` is `3.0`, not `3`.
-- `//` is **floor division** and keeps the type: `7 // 2` is `3` (it rounds toward
-  negative infinity). `%` is the **modulo** (remainder): `7 % 2` is `1`.
+- `//` is **floor division**: with integer operands `7 // 2` is `3`, rounding toward
+  negative infinity (so `-7 // 2` is `-4`). `%` is the **modulo** (remainder): `7 % 2`
+  is `1`. (As with the other operators, a `float` operand makes the result a `float`.)
 
 The identity that ties them together, and that you will rely on constantly:
 

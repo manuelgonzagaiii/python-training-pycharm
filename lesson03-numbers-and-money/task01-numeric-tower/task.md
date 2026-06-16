@@ -99,10 +99,10 @@ True
 
 Here is the rule the rest of the phase enforces, decided now on purpose:
 
-- **Quantities and counts** (units in stock, items per case) → `int`. Exact, unbounded.
-- **Money** → `Decimal` (stage 6), never `float`. Cents must be exact.
-- **Exact ratios** (a tax rate like 8.25%) → `Fraction` (stage 7).
-- **`complex`** → never, in business code.
+- **Quantities and counts** (units in stock, items per case) -> `int`. Exact, unbounded.
+- **Money** -> `Decimal` (stage 6), never `float`. Cents must be exact.
+- **Exact ratios** (a tax rate like 8.25%) -> `Fraction` (stage 7).
+- **`complex`** -> never, in business code.
 
 There is nothing to run through the checker here. Try the snippets above in the REPL,
 make sure the `0.1 + 0.2` result genuinely surprises you, then move to the quiz.
