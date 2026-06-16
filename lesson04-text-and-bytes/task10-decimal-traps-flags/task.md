@@ -1,82 +1,87 @@
-# Decimal context traps and signal flags: enforcing penny-exactness
+# Stage 10: Decimal signals, traps, and flags
 
-> **Phase:** Numbers, Text & Bytes  •  **Stage:** 4.10 of 11  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+Back in Lesson 3 you built `money.py` and the `money`/`round_money` helpers. This stage
+extends that same module with the machinery that makes money handling *defensive*: parsing
+untrusted input safely, and refusing to silently lose a fraction of a cent. To do that you
+need to understand three words people use loosely and Python defines precisely.
 
-## What you'll learn
-- Explain the difference between a Decimal *signal* (a condition like Inexact or InvalidOperation), a *trap* (signals you have asked the context to raise as an exception), and a *flag* (a sticky record that a condition occurred even when not trapped).
-- Turn a context trap on for a bounded region with localcontext() and ctx.traps[Inexact] = True, so that an operation that cannot be represented exactly raises instead of silently rounding.
-- Use a trapped Inexact as control flow: attempt an exact equal split, and on Inexact fall back to a remainder-distribution algorithm.
-- Read getcontext().flags after an untrapped operation to detect that rounding happened, and use ctx.clear_flags() to get a clean reading; understand that localcontext() isolates flags so the surrounding program is unaffected.
-- Intentionally raise/catch InvalidOperation to validate user-supplied money strings, translating it into a domain-meaningful ValueError.
-- Appreciate why production financial code enforces exactness: a payment allocation must sum back to the original total to the cent, with no money invented or lost.
+## Signal, trap, flag
 
-## Python features introduced
-`decimal.localcontext as a parenthesized context manager`, `decimal context traps mapping: ctx.traps[Inexact] = True`, `decimal signals/exceptions: Inexact, InvalidOperation, DivisionByZero, Rounded`, `intentionally raising InvalidOperation (and catching it to re-raise ValueError)`, `reading and clearing accumulated condition flags: getcontext().flags, ctx.flags[Inexact], ctx.clear_flags()`, `the difference between a trapped signal (raises) and an untrapped signal (sets a flag, returns a rounded result)`, `Decimal.quantize with an explicit rounding mode (ROUND_DOWN) for floor-to-cents`, `Decimal.to_integral_value for exact integer extraction`, `try/except inside a context manager; control flow that falls back on a caught signal`, `PEP 604 return annotations (list[Decimal]), walrus operator, f-string '=' self-documenting debug output`
+When a `Decimal` operation hits a special condition, it raises a **signal** — a named
+condition like `Inexact` (the result had to be rounded), `InvalidOperation` (e.g. parsing
+`"twelve"`), `DivisionByZero`, or `Rounded`. What *happens* to a signal depends on the
+context:
 
-## MiniERP increment
-Adds penny-exact money helpers to the MiniERP money module that Sales & Invoicing and Payments depend on. (1) parse_money(text) parses a user/import-supplied amount by trapping nothing extra but catching the default-trapped InvalidOperation and re-raising it as a clear ValueError('not valid money: ...') — this is the first place the ERP deliberately exercises InvalidOperation, the signal later phases only reference. (2) split_payment(total, parts) splits an invoice total across N installments/line items: it first attempts an exact equal share inside localcontext() with traps[Inexact] = True, and only if that raises Inexact does it fall back to a largest-remainder allocation (floor each share with ROUND_DOWN, then hand out the leftover cents one at a time) so the shares always sum back to the original total exactly. (3) had_rounding(total, parts) reports, via getcontext().flags[Inexact] after a cleared-flag division, whether an even split would have lost precision — letting reporting flag invoices that don't divide cleanly. These build only on the Decimal money quantization/rounding work from the earlier decimal-money task; no classes or custom exception types are required yet.
+- A **trap** turns a signal into a raised exception. By default the context traps
+  `InvalidOperation` and `DivisionByZero` (the dangerous ones) but **not** `Inexact` —
+  rounding is normal, so it does not raise.
+- A **flag** is a sticky record that a signal occurred, set whether or not it is trapped.
+  You can read `ctx.flags[Inexact]` after the fact to ask "did anything get rounded?"
 
----
+The context that holds these is reachable with `decimal.getcontext()`, and
+`decimal.localcontext()` gives you a **temporary** one for a `with` block so your changes
+do not leak out.
 
-<div class="hint" title="Author notes (remove when populated)">
+## parse_money: lean on a default trap
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+`InvalidOperation` is already trapped, so `Decimal("twelve")` raises it. Rather than let
+that Decimal-specific exception escape, `parse_money` catches it and re-raises a plain
+`ValueError` — callers then handle one obvious error type:
 
-- **Starter idea:** from decimal import (
-    Decimal, localcontext, getcontext,
-    Inexact, InvalidOperation, ROUND_DOWN,
-)
+```
+>>> Decimal("twelve")
+decimal.InvalidOperation: [<class 'decimal.ConversionSyntax'>]
+```
 
-CENTS = Decimal("0.01")  # 2-decimal money quantum, as in the earlier decimal-money stage
+## require_exact: turn a trap ON for a region
 
+Sometimes you want the *opposite* of normal rounding — you want an error if money would be
+lost. Turn the `Inexact` trap on inside a `localcontext()` and quantizing an amount with
+sub-cent precision raises instead of rounding it away:
 
-def parse_money(text: str) -> Decimal:
-    """Parse a money string to a cent-quantized Decimal.
+```
+>>> from decimal import localcontext, Inexact
+>>> with localcontext() as ctx:
+...     ctx.traps[Inexact] = True
+...     Decimal("19.505").quantize(Decimal("0.01"))    # raises Inexact
+```
 
-    Decimal('not-a-number') raises InvalidOperation (it is trapped by default in
-    the standard context). Catch it and re-raise a domain ValueError so callers
-    in Sales & Invoicing get a clear message instead of a raw decimal signal.
-    """
-    try:
-        return Decimal(text).quantize(CENTS)
-    except InvalidOperation:
-        raise ValueError(f"not valid money: {text!r}")
+The trap is switched off again the moment the `with` block ends — that is the point of a
+*local* context.
 
+## Your task
 
-def split_payment(total: Decimal, parts: int) -> list[Decimal]:
-    """Split `total` across `parts` shares that sum back to `total` exactly.
+Fill in the two blanks in `money.py`:
 
-    Step 1 — try an exact equal split. Inside localcontext() set
-    ``ctx.traps[Inexact] = True`` so that ``(total / parts).quantize(CENTS)``
-    RAISES Inexact when the division cannot be represented exactly in cents.
-    If it does not raise, return ``[share] * parts``.
+1. `parse_money(text)` — name the signal to catch (`InvalidOperation`) so a bad string
+   becomes a `ValueError`.
+2. `require_exact(amount)` — turn the `Inexact` trap on for the local context
+   (`ctx.traps[Inexact] = True`).
 
-    Step 2 — on Inexact, fall back to largest-remainder allocation:
-    floor each share with ``.quantize(CENTS, rounding=ROUND_DOWN)``, then
-    distribute the leftover cents (total - floored_sum) one cent at a time to
-    the first shares. The returned list MUST sum to `total` exactly.
-    """
-    # TODO: implement Step 1 (trap Inexact) and Step 2 (remainder distribution).
-    raise NotImplementedError
+## Worked example
 
+```
+>>> import money
+>>> money.parse_money("19.5")
+Decimal('19.50')
+>>> money.parse_money("twelve")
+ValueError: not valid money: 'twelve'
+>>> money.require_exact(Decimal("19.505"))
+ValueError: amount has sub-cent precision: 19.505
+```
 
-def had_rounding(total: Decimal, parts: int) -> bool:
-    """Return True if an even split of `total` across `parts` would lose precision.
+## What the check verifies, and what it leaves to you
 
-    Do NOT trap anything. Inside localcontext(): clear_flags(), perform the
-    division (no quantize), then read ``ctx.flags[Inexact]``. Because the
-    context is local, the surrounding program's flags are untouched.
-    """
-    # TODO: clear flags, divide, then return the Inexact flag's value.
-    raise NotImplementedError
+- Enforced: a valid string parses and quantizes to cents; garbage (`"twelve"`, `""`)
+  raises `ValueError` rather than leaking a Decimal exception; `require_exact` accepts a
+  clean cent amount and rejects sub-cent precision.
+- Your free choice: the error message wording.
 
+<div class="hint" title="If you are stuck">
 
-if __name__ == "__main__":
-    total = parse_money("100.00")
-    for n in (4, 3):
-        shares = split_payment(total, n)
-        print(f"{total} / {n} -> {[str(s) for s in shares]}  {sum(shares)=}  {had_rounding(total, n)=}")
-
-- **Test focus:** Verify the trap/flag machinery end to end. (1) parse_money: valid strings quantize to 2dp ('19.5' -> Decimal('19.50')); invalid strings ('twelve', '') raise ValueError (not a bare InvalidOperation leaking out). (2) split_payment: an exact case ('100.00', 4) returns four equal Decimal('25.00') shares; an inexact case ('100.00', 3) returns ['33.34','33.33','33.33']; assert across several totals/parts (incl. '9.99'/2, '0.10'/3) that sum(shares) == total EXACTLY and len(shares) == parts and every share is cent-quantized. (3) had_rounding: True for ('100.00', 3) and False for ('100.00', 4). (4) Isolation check: call getcontext().clear_flags(), invoke had_rounding/split_payment, and assert getcontext().flags[Inexact] is still False afterward — proving localcontext() did not leak signal flags into the global context. Optionally assert that an exact split_payment did not need the remainder fallback by checking the shares are all identical.
+`parse_money` catches `InvalidOperation`. `require_exact` sets `ctx.traps[Inexact] = True`.
 
 </div>
+
+Reference: Python documentation, "decimal — Decimal: Context objects, Signals, and the
+trap/flag model" at docs.python.org.

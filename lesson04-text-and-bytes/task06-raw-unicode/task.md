@@ -26,8 +26,8 @@ Rule of thumb: use a raw string whenever a backslash should mean a backslash.
 Every character has a numeric **code point**. You can write one by its hex value or, more
 readably, by its official **name**:
 
-- `\xNN` — one byte (0–255), e.g. `\xe9`.
-- `\uXXXX` — a 4-hex-digit code point, e.g. `€`.
+- `\xNN` — a 2-hex-digit code point (0-255), e.g. `\xe9`.
+- `\uXXXX` — a 4-hex-digit code point, e.g. `\u20ac` (the euro sign).
 - `\N{NAME}` — by Unicode name, e.g. `\N{EURO SIGN}`. This is self-documenting: a reader
   sees what it is without looking it up.
 
@@ -36,7 +36,7 @@ readably, by its official **name**:
 ```
 >>> ord("€"), chr(0x20ac)
 (8364, '€')
->>> "\N{EURO SIGN}" == "€" == "€"
+>>> "\N{EURO SIGN}" == "\u20ac" == "€"
 True
 ```
 

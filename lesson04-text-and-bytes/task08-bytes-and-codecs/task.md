@@ -9,7 +9,7 @@ adds MiniERP's serialization primitives and completes `text.py`.
 ## str vs bytes, and the codec between them
 
 - A `str` is a sequence of Unicode **code points** (characters).
-- A `bytes` is a sequence of **integers 0–255**. Its literal is `b"..."`.
+- A `bytes` is a sequence of **integers 0-255**. Its literal is `b"..."`.
 
 To go from text to bytes you **encode**; to go back you **decode**. Both need a
 **codec** — and you should always name it explicitly:
@@ -46,7 +46,7 @@ b'Y2Fmw6k='
 'Y2Fmw6k='
 ```
 
-The round trip is encode-to-UTF-8 → base64-encode → decode-the-base64-to-ASCII-text, and
+The round trip is encode-to-UTF-8 -> base64-encode -> decode-the-base64-to-ASCII-text, and
 exactly the reverse coming back.
 
 ## Your task

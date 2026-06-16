@@ -20,6 +20,11 @@ class TestUnicode(unittest.TestCase):
             text.normalize_unicode(combining),
         )
 
+    def test_normalize_folds_compatibility_forms(self):
+        # NFKC (not just NFC) folds compatibility variants: a full-width digit
+        # becomes a normal one. This pins the NFKC requirement -- NFC would fail.
+        self.assertEqual(text.normalize_unicode(chr(0xFF15)), "5")  # full-width five
+
     def test_currency_symbol_euro(self):
         self.assertEqual(text.currency_symbol("EUR"), chr(0x20AC))  # euro sign
 

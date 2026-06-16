@@ -1,10 +1,49 @@
+"""Check for stage 11: custom codec error handlers.
+
+Grading policy: validity, not wording. We check each errors= policy and the
+custom registered handler. The accented record is built from explicit code
+points (chr) so it is unambiguously non-ASCII on disk.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Verify: (1) export_record(..., errors='strict') raises UnicodeEncodeError on a non-ASCII record while errors='replace'/'ignore' do not; (2) the four named handlers produce their documented bytes (e.g. backslashreplace yields b'\\u2014' for the em dash, xmlcharrefreplace yields b'—', namereplace yields b'\\N{EM DASH}'); (3) codecs.lookup_error('minierp.xref') returns the registered handler and export_record(..., errors='minierp.xref') turns 'é' into b'[U+00E9 LATIN SMALL LETTER E WITH ACUTE]' with surrounding ASCII intact; (4) the custom handler advances correctly over consecutive non-ASCII chars (no infinite loop, no skipped characters); (5) import_bytes(b'caf\xe9', 'utf-8') decodes via surrogateescape and re-encoding with 'surrogateescape' reproduces the original bytes exactly; (6) a UnicodeEncodeError caught in the test exposes .start/.end/.object pointing at the offending character.
+import export
+
+ACCENTED = {"name": "Ren" + chr(0x00E9) + "e", "note": "VIP " + chr(0x2014) + " priority"}
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestCodecHandlers(unittest.TestCase):
+    def test_strict_raises_on_non_ascii(self):
+        with self.assertRaises(UnicodeEncodeError):
+            export.export_record(ACCENTED, encoding="ascii", errors="strict")
+
+    def test_ascii_record_strict_ok(self):
+        out = export.export_record({"name": "Renee", "note": "ok"}, encoding="ascii", errors="strict")
+        self.assertEqual(out, b"Renee|ok")
+
+    def test_replace_does_not_raise(self):
+        out = export.export_record(ACCENTED, encoding="ascii", errors="replace")
+        self.assertIsInstance(out, bytes)
+        self.assertIn(b"?", out)  # replace inserts '?'
+
+    def test_ignore_drops_bad_chars(self):
+        out = export.export_record(ACCENTED, encoding="ascii", errors="ignore")
+        self.assertTrue(out.isascii())  # bad characters dropped
+
+    def test_custom_xref_handler(self):
+        out = export.export_record({"x": chr(0x2014)}, encoding="ascii", errors="xref")
+        self.assertIn(b"&#8212;", out)  # em dash -> XML character reference
+
+    def test_xref_escapes_only_the_bad_chars(self):
+        # A multi-field record with one bad char: only that char is escaped; the
+        # '|' separator and the ASCII text must pass through untouched. (Catches a
+        # handler that escapes error.object -- the whole line -- instead of the slice.)
+        out = export.export_record({"a": "X" + chr(0x2014) + "Y", "b": "ok"}, "ascii", "xref")
+        self.assertIn(b"&#8212;", out)    # the em dash was escaped
+        self.assertIn(b"X", out)          # plain ASCII is left as-is
+        self.assertIn(b"|ok", out)        # the separator and ASCII field are intact
+        self.assertNotIn(b"&#124;", out)  # the '|' (124) must NOT be escaped
+
+
+if __name__ == "__main__":
+    unittest.main()

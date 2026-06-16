@@ -1,0 +1,130 @@
+"""MiniERP's numeric core.
+
+Pure helper functions, reused by every later interface (CLI, web, GUI, TUI).
+This module grows across the course: it starts with the integer quantity math
+an inventory needs, builds up to exact, cents-accurate Decimal money, and here
+adds penny-exact parsing and trap-checked rounding for Sales and Payments.
+"""
+from decimal import Decimal, ROUND_HALF_UP, Inexact, InvalidOperation, localcontext
+from fractions import Fraction
+
+
+def units_to_cases(units: int, per_case: int) -> tuple[int, int]:
+    """Split a pile of `units` into (full_cases, loose_units).
+
+    Example: 27 units packed 12 to a case is (2, 3) -- two full cases and three
+    loose units. One call gives both the quotient and the remainder.
+    """
+    return divmod(units, per_case)
+
+
+def split_evenly(total: int, parts: int) -> tuple[int, int]:
+    """Split `total` across `parts`: return (base_share, remainder).
+
+    Every part gets `base_share`; `remainder` parts get one extra so the shares
+    add back up to `total`. Used later to divide an order across boxes or a bill
+    across people.
+    """
+    base_share = total // parts
+    remainder = total % parts
+    return base_share, remainder
+
+
+def running_total(prices: list[int]) -> int:
+    """Add up a list of prices, accumulating the subtotal in place with +=."""
+    total = 0
+    for price in prices:
+        total += price
+    return total
+
+
+def in_stock_range(qty: int, low: int, high: int) -> bool:
+    """True when `qty` is between `low` and `high`, inclusive on both ends."""
+    return low <= qty <= high
+
+
+# Product attribute flags. Each is a single distinct bit, so several booleans
+# fit in one integer field. (This is the same idea the Users & Roles permission
+# bitset will use later.)
+TAXABLE = 1 << 0
+DISCOUNTABLE = 1 << 1
+RETURNABLE = 1 << 2
+
+
+def has_flag(flags: int, mask: int) -> bool:
+    """True when every bit set in `mask` is also set in `flags`."""
+    return flags & mask == mask
+
+
+def set_flag(flags: int, mask: int) -> int:
+    """Return `flags` with the bits in `mask` turned on."""
+    return flags | mask
+
+
+def clear_flag(flags: int, mask: int) -> int:
+    """Return `flags` with the bits in `mask` turned off, leaving the rest alone."""
+    return flags & ~mask
+
+
+# One cent. Money is quantized to this so every amount has exactly two places.
+CENTS = Decimal("0.01")
+
+
+def money(value: str | int) -> Decimal:
+    """Build an exact money value from a string or whole number.
+
+    Always build from a string: Decimal("0.10") is exactly ten cents, while
+    Decimal(0.10) would copy the float's tiny rounding error straight into the
+    books. Float input is refused outright so that mistake cannot reach an
+    invoice.
+    """
+    if isinstance(value, float):
+        raise TypeError("money() refuses float; pass a string like '19.99'")
+    return Decimal(str(value))
+
+
+def round_money(amount: Decimal) -> Decimal:
+    """Round a money amount to whole cents, rounding half away from zero."""
+    return amount.quantize(CENTS, rounding=ROUND_HALF_UP)
+
+
+def apply_rate(amount: Decimal, rate: Decimal) -> Decimal:
+    """Multiply a money amount by a rate, rounding to cents once, at the end."""
+    return round_money(amount * rate)
+
+
+def tax_for(amount: Decimal, percent: Fraction) -> Decimal:
+    """Tax on `amount` for a rate given as a percent Fraction (8.25% is Fraction(33, 4))."""
+    rate = Decimal(percent.numerator) / Decimal(percent.denominator) / 100
+    return round_money(amount * rate)
+
+
+def parse_money(text: str) -> Decimal:
+    """Parse a user- or import-supplied money string into a cent-quantized Decimal.
+
+    A malformed string makes Decimal raise InvalidOperation -- a signal the default
+    context traps (turns into an exception). We catch it and re-raise a clear
+    ValueError, so callers deal with one obvious error type, not a Decimal-specific
+    one. (This is the first place the ERP deliberately exercises InvalidOperation.)
+    """
+    try:
+        amount = Decimal(text)
+    except InvalidOperation:
+        raise ValueError(f"not valid money: {text!r}")
+    return round_money(amount)
+
+
+def require_exact(amount: Decimal) -> Decimal:
+    """Quantize to cents, but refuse to round: raise ValueError if a sub-cent is lost.
+
+    Signal vs trap vs flag: a *signal* (here Inexact) is a condition Decimal can raise;
+    a *trap* makes the context raise it as an exception; a *flag* is a sticky record that
+    it happened. Here we turn the Inexact *trap* on for a bounded region, so an amount
+    with more than two decimal places raises instead of silently dropping money.
+    """
+    with localcontext() as ctx:
+        ctx.traps[Inexact] = True
+        try:
+            return amount.quantize(CENTS)
+        except Inexact:
+            raise ValueError(f"amount has sub-cent precision: {amount}")
