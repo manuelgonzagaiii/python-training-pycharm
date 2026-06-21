@@ -1,33 +1,59 @@
-# Mapping Patterns for Structured Requests
+# Stage 3: mapping patterns for structured requests
 
-> **Phase:** Control Flow & Functions  •  **Stage:** 9.3 of 6  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+The same command can arrive not as a token list but as a **dict** — for example a JSON
+payload from the web interface: `{"op": "price", "sku": "A-001", "qty": 2}`. `match` handles
+that shape too, with **mapping patterns**, so the CLI and the web layer can funnel through
+the same routing logic.
 
-## What you'll learn
-- Match dict-shaped requests by required keys
-- Capture both a known field and the rest of a mapping
-- Understand that mapping patterns match on subset, not exact, keys
+## Matching a dict by its keys
 
-## Python features introduced
-`mapping patterns {"key": value}`, `capturing a value by key`, `**rest to capture remaining keys`, `partial-match semantics of mapping patterns`, `combining mapping with literal subpatterns`
+```
+match req:
+    case {"op": "price", "sku": sku}:
+        ...        # matches any dict that HAS op == "price" and a "sku" key
+```
 
-## MiniERP increment
-Add classify_request(req) to cli/dispatch.py that takes a dict request (e.g. from a Web/JSON interface) and matches mapping patterns like {'op': 'price', 'sku': sku, **rest} to extract the operation and salient fields, routing JSON-style payloads through the same logic the CLI uses.
+Two things make mapping patterns behave differently from sequence patterns:
 
----
+- They match on **the keys you name and ignore the rest**. `{"op": "price", "sku": sku}`
+  matches a dict that has at least those keys with `op` equal to `"price"`; extra keys like
+  `"qty"` do not stop the match. (Sequence patterns, by contrast, care about the full
+  length.)
+- A value position can be a **literal** to constrain it (`"op": "price"`) or a **capture**
+  to pull it out (`"sku": sku` binds the SKU). You can mix both in one pattern.
+- `**rest` captures the keys you did *not* name into a new dict — the mapping equivalent of
+  the star pattern.
 
-<div class="hint" title="Author notes (remove when populated)">
+## Your task
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+In `dispatch.py`, finish `classify_request(req)`. The discount, generic, and fallback cases
+are written. Fill in the **first** case: match a request whose `op` is `"price"` and which
+has a `"sku"` key, binding the SKU and capturing any remaining keys with `**rest`.
 
-- **Starter idea:** def classify_request(req: dict) -> tuple[Command, dict]:
-    """Match a dict payload with mapping patterns; capture remaining keys with **rest."""
-    match req:
-        case {"op": "price", "sku": sku, **rest}:
-            ...
-        case {"op": op}:
-            ...
-        case _:
-            return (Command.HELP, {})
-- **Test focus:** A price payload extracts sku and leftover fields via **rest; a generic {'op':...} payload routes by op; a payload missing 'op' falls to HELP.
+## Worked example
+
+```
+>>> import dispatch
+>>> dispatch.classify_request({"op": "price", "sku": "A-001", "qty": 2})
+('price', {'sku': 'A-001', 'qty': 2})
+>>> dispatch.classify_request({"op": "report"})
+('report', {})
+>>> dispatch.classify_request({})
+('help', {})
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: a `price` request is recognized and its SKU is extracted; other operations route
+  by their `op`; a dict with no `op` falls back to `help`.
+- Your free choice: exactly which extra fields you carry forward in the returned dict is up
+  to you, as long as the operation is identified and the SKU is available for a price request.
+
+<div class="hint" title="If you are stuck">
+
+The pattern is `case {"op": "price", "sku": sku, **rest}:`. The literal `"price"` constrains
+the operation; `sku` captures the value; `**rest` scoops up whatever else was in the dict.
 
 </div>
+
+Reference: Python documentation, "The match statement" (mapping patterns) at docs.python.org.

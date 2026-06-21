@@ -1,39 +1,84 @@
-# LEGB Scope, nonlocal, and global
+# Stage 6: LEGB scope, nonlocal, and global
 
-> **Phase:** Control Flow & Functions  •  **Stage:** 10.6 of 8  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+When you use a name, Python decides which variable it means by searching scopes in a fixed
+order — **LEGB**:
 
-## What you'll learn
-- Trace name resolution through Local, Enclosing, Global, Built-in scopes
-- Use nonlocal to mutate an enclosing function's variable
-- Use global deliberately (and understand why it is usually avoided)
+- **L**ocal: names assigned in the current function.
+- **E**nclosing: names in any function wrapped around this one.
+- **G**lobal: names at the top level of the module.
+- **B**uilt-in: names like `len`, `print`, `min`.
 
-## Python features introduced
-`LEGB scope resolution`, `nonlocal keyword`, `global keyword`, `enclosing-scope mutation via closures`, `module-level state`, `why reassignment needs a scope declaration`
+Python walks L -> E -> G -> B and uses the first match. That covers **reading** a name. The
+catch is **reassigning** one.
 
-## MiniERP increment
-Add make_running_total() to rules.py returning an add(n) closure that updates an enclosing accumulator via nonlocal, plus a module-level audit counter bumped through global in record_pricing_call() — instrumentation the Audit-log module will later consume.
+## The reassignment rule
 
----
+By default, assigning to a name inside a function makes it **local** — even if a same-named
+variable exists in an enclosing or global scope. So this does not do what it looks like:
 
-<div class="hint" title="Author notes (remove when populated)">
-
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
-
-- **Starter idea:** _PRICING_CALLS = 0
-
-
-def record_pricing_call() -> int:
-    """Increment the module-level counter using global; return new count."""
-    global _PRICING_CALLS
-    ...
-
-
+```
 def make_running_total():
-    total = 0.0
-    def add(n: float) -> float:
-        nonlocal total
-        ...
+    total = 0
+    def add(n):
+        total += n      # ERROR: `total +=` makes `total` local, then reads it before it exists
+        return total
     return add
-- **Test focus:** Successive add() calls accumulate via nonlocal; record_pricing_call increments the module global across calls; omitting nonlocal/global would rebind locally (covered by the contrast in tests).
+```
+
+To say "reassign the variable from the enclosing scope, do not make a new local," you declare
+it:
+
+- **`nonlocal total`** — reassign a variable from the nearest **enclosing function**.
+- **`global _counter`** — reassign a variable at **module level**.
+
+```
+def add(n):
+    nonlocal total
+    total += n          # now updates the enclosing `total`
+    return total
+```
+
+This is how a closure can carry **mutable** state (a running total) across calls, and how a
+module-level counter (a pricing-call tally the audit log will later read) gets bumped from
+inside a function.
+
+## Your task
+
+In `rules.py`, finish two functions:
+
+1. `make_running_total()` — add the `nonlocal` declaration in `add` so it updates the
+   enclosing `total` instead of creating a local.
+2. `record_pricing_call()` — add the `global` declaration so it bumps the module-level
+   counter `_pricing_calls`.
+
+## Worked example
+
+```
+>>> import rules
+>>> add = rules.make_running_total()
+>>> add(10), add(5), add(0)
+(10, 15, 15)
+>>> other = rules.make_running_total()      # independent state
+>>> other(3)
+3
+>>> a = rules.record_pricing_call(); b = rules.record_pricing_call()
+>>> b == a + 1
+True
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: a running total accumulates across calls; two totals are independent of each other;
+  `record_pricing_call` returns a value one greater each call.
+- Your free choice: nothing about the structure is yours to change here — the point is the two
+  scope declarations, and they must be `nonlocal` and `global` respectively.
+
+<div class="hint" title="If you are stuck">
+
+Inside `add`, the missing line is `nonlocal total`. Inside `record_pricing_call`, it is
+`global _pricing_calls`. Both must come before the line that reassigns the name.
 
 </div>
+
+Reference: Python documentation, "The nonlocal statement", "The global statement", and
+"Python Scopes and Namespaces" at docs.python.org.

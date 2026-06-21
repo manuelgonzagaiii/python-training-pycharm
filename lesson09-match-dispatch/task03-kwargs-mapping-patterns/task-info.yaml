@@ -1,7 +1,11 @@
 type: edu
 files:
-  - name: task.py
+  - name: dispatch.py
     visible: true
+    placeholders:
+      - offset: 2573
+        length: 35
+        placeholder_text: "a price op with a sku key, capturing remaining keys as rest"
   - name: tests/test_task.py
     visible: false
     propagatable: false

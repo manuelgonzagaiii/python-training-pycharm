@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: rules.py
     visible: true
+    placeholders:
+      - offset: 1985
+        length: 1
+        placeholder_text: the positional-only marker
+      - offset: 1988
+        length: 1
+        placeholder_text: the keyword-only marker
   - name: tests/test_task.py
     visible: false
     propagatable: false

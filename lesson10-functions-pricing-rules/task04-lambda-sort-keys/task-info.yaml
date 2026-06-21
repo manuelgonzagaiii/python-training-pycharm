@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: rules.py
     visible: true
+    placeholders:
+      - offset: 3077
+        length: 30
+        placeholder_text: "a lambda giving the line total: price times qty"
+      - offset: 3889
+        length: 25
+        placeholder_text: this line total is over the limit
   - name: tests/test_task.py
     visible: false
     propagatable: false

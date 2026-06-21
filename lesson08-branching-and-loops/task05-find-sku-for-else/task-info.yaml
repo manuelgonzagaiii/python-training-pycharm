@@ -1,6 +1,12 @@
 type: edu
 files:
-  - name: task.py
+  - name: inventory.py
+    visible: true
+    placeholders:
+      - offset: 1538
+        length: 37
+        placeholder_text: no product matched -- raise KeyError for the unknown sku
+  - name: pricing.py
     visible: true
   - name: tests/test_task.py
     visible: false

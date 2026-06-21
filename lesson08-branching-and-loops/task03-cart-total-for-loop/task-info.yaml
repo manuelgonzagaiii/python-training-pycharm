@@ -1,7 +1,11 @@
 type: edu
 files:
-  - name: task.py
+  - name: pricing.py
     visible: true
+    placeholders:
+      - offset: 2631
+        length: 43
+        placeholder_text: "this line's total: qty times the tiered unit price"
   - name: tests/test_task.py
     visible: false
     propagatable: false

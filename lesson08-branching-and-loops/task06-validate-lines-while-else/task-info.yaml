@@ -1,7 +1,13 @@
 type: edu
 files:
-  - name: task.py
+  - name: inventory.py
     visible: true
+  - name: pricing.py
+    visible: true
+    placeholders:
+      - offset: 3219
+        length: 32
+        placeholder_text: "an invalid line: non-positive qty or negative price"
   - name: tests/test_task.py
     visible: false
     propagatable: false

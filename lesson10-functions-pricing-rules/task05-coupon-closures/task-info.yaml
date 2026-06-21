@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: rules.py
     visible: true
+    placeholders:
+      - offset: 4309
+        length: 35
+        placeholder_text: discount the price by the captured percent
+      - offset: 4890
+        length: 15
+        placeholder_text: snapshot the current percent as a default arg
   - name: tests/test_task.py
     visible: false
     propagatable: false

@@ -7,6 +7,6 @@ options:
     is_correct: false
   - text: Store amounts as float and compare with math.isclose()
     is_correct: false
-  - text: Store amounts as float, round to 2 places, then compare with ==
+  - text: "Store amounts as float, round to 2 places, then compare with =="
     is_correct: false
 local_check: true

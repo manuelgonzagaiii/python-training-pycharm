@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: rules.py
     visible: true
+    placeholders:
+      - offset: 6804
+        length: 12
+        placeholder_text: "the base case: a leaf product as one (sku, qty) line"
+      - offset: 6903
+        length: 70
+        placeholder_text: "recurse on the component, scaling its qty by qty"
   - name: tests/test_task.py
     visible: false
     propagatable: false

@@ -1,30 +1,66 @@
-# Reservation Loop with while
+# Stage 4: a reservation loop with while
 
-> **Phase:** Control Flow & Functions  •  **Stage:** 8.4 of 7  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+A `for` loop is the right tool when you know the collection you are walking. A `while`
+loop is for when you **do not** know how many passes you need ahead of time — you keep
+going *while* some condition holds and stop when it stops. Stock reservation is exactly
+that shape: keep drawing stock until either the request is filled or the shelf is empty,
+whichever comes first.
 
-## What you'll learn
-- Choose while when the iteration count is condition-driven, not sequence-driven
-- Decrement a counter safely and terminate with break
-- Recognize and avoid infinite-loop pitfalls
+```
+while reserved < requested and available > 0:
+    ...
+```
 
-## Python features introduced
-`while loop`, `loop condition design`, `augmented assignment`, `avoiding infinite loops`, `break`, `manual counter vs for`
+The whole correctness of a `while` loop rests on one question: **why does it end?** A loop
+whose condition never becomes false runs forever. Here it ends because every pass either
+moves `reserved` closer to `requested` or lowers `available` (usually both), so one of the
+two tests is guaranteed to fail eventually. When you write a `while`, always be able to
+point at the line that makes progress toward the exit.
 
-## MiniERP increment
-Add reserve_units(available, requested) to an inventory.py module: using a while loop, draw down stock one batch at a time (batch size 10) until the request is met or stock runs out, returning units actually reserved. Models partial fulfillment for later Sales tasks.
+This stage introduces a second module, `inventory.py`. Your `pricing.py` from the earlier
+stages is unchanged and carried alongside it.
 
----
+## Reserving in batches
 
-<div class="hint" title="Author notes (remove when populated)">
+Real warehouses move stock in batches, not one unit at a time. This loop reserves up to a
+batch (10 units) per pass, but never more than the remaining request and never more than
+what is on hand — `min(batch, requested - reserved, available)` picks the largest safe
+amount. When stock is short, the request is only **partially** filled, and the function
+returns how many units were actually reserved.
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+## Your task
 
-- **Starter idea:** def reserve_units(available: int, requested: int) -> int:
-    """Reserve in batches of 10 via a while loop; return units actually reserved."""
-    reserved = 0
-    while ...:
-        ...
-    return reserved
-- **Test focus:** Reserves exactly requested when stock suffices; caps at available when short; handles requested=0 and available=0 without looping forever.
+In `inventory.py`, finish `reserve_units(available, requested)`. The batch logic inside the
+loop is written; you supply the **loop condition** that keeps it running while there is
+still demand to fill and stock to fill it with.
+
+## Worked example
+
+```
+>>> import inventory
+>>> inventory.reserve_units(100, 35)     # plenty of stock
+35
+>>> inventory.reserve_units(25, 100)     # only 25 on hand -> partial fill
+25
+>>> inventory.reserve_units(0, 10)       # nothing on hand
+0
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: a fully-stocked request reserves exactly what was asked; a short request
+  reserves all that is available and no more; zero stock or a zero request reserves 0; the
+  result never exceeds either bound.
+- Your free choice: the condition can be written either order (`available > 0 and
+  reserved < requested` is the same), and a different but terminating loop structure that
+  produces the right counts also passes.
+
+<div class="hint" title="If you are stuck">
+
+The loop should run `while reserved < requested and available > 0`. Both parts matter:
+drop the first and you over-reserve; drop the second and you loop forever when stock runs
+out.
 
 </div>
+
+Reference: Python documentation, "while statements" at docs.python.org.

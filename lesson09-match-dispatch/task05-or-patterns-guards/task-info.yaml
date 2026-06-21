@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: dispatch.py
     visible: true
+    placeholders:
+      - offset: 4373
+        length: 29
+        placeholder_text: "HELP or REPORT, sharing one branch (an OR pattern)"
+      - offset: 4456
+        length: 21
+        placeholder_text: "PRICE, but only when args is non-empty (a guard)"
   - name: tests/test_task.py
     visible: false
     propagatable: false

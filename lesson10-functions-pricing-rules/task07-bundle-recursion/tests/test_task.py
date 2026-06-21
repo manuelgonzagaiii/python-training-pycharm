@@ -1,10 +1,36 @@
+"""Check for task07-bundle-recursion.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Flat product returns one line; one- and multi-level bundles flatten with multiplied quantities; over-deep/cyclic nesting raises RecursionError via the depth guard.
+import rules
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+CATALOG = {
+    "KIT": [("A", 2), ("B", 1)],
+    "B": [("C", 3)],
+}
+
+
+class TestExpandBundle(unittest.TestCase):
+    def test_leaf_returns_itself(self):
+        self.assertEqual(rules.expand_bundle(CATALOG, "A", 5), [("A", 5)])
+
+    def test_nested_bundle_flattens(self):
+        result = dict(rules.expand_bundle(CATALOG, "KIT", 1))
+        self.assertEqual(result, {"A": 2, "C": 3})
+
+    def test_quantities_scale(self):
+        result = dict(rules.expand_bundle(CATALOG, "KIT", 2))
+        self.assertEqual(result, {"A": 4, "C": 6})
+
+    def test_self_referencing_bundle_is_caught(self):
+        # a bundle that contains itself would recurse forever; expansion must stop
+        with self.assertRaises(RecursionError):
+            rules.expand_bundle({"X": [("X", 1)]}, "X", 1)
+
+
+if __name__ == "__main__":
+    unittest.main()

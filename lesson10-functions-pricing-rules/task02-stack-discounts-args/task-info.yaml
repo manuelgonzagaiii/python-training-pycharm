@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: rules.py
     visible: true
+    placeholders:
+      - offset: 1820
+        length: 30
+        placeholder_text: take this percent off the running result
+      - offset: 1858
+        length: 26
+        placeholder_text: "the clamp_floor option, read from kwargs"
   - name: tests/test_task.py
     visible: false
     propagatable: false

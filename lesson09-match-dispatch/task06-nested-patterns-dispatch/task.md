@@ -1,35 +1,72 @@
-# Nested Patterns and the Full Dispatcher
+# Stage 6: nested patterns and the full dispatcher
 
-> **Phase:** Control Flow & Functions  •  **Stage:** 9.6 of 6  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+This stage assembles everything into `dispatch()` — MiniERP's single command entry point.
+One `match` accepts every shape a request can arrive in (a CLI token list, a JSON-style dict,
+or an already-built request object) and returns a typed request object the pricing layer can
+later execute.
 
-## What you'll learn
-- Compose sequence, mapping, and class patterns to one level deep and beyond
-- Design a single match that handles the whole command surface
-- See how structural matching replaces sprawling if/elif chains
+## Patterns nest
 
-## Python features introduced
-`nested patterns (patterns inside patterns)`, `sequence-inside-mapping and class-inside-sequence`, `combining literal+capture+guard nesting`, `exhaustive-style match design`, `match as the single dispatch entry point`
+The power of structural matching is that patterns compose: a subpattern can itself be any
+pattern. So a sequence pattern can contain literals and captures, and a mapping pattern can
+have a sequence pattern as one of its values:
 
-## MiniERP increment
-Add dispatch(request) to cli/dispatch.py — the phase's milestone entry point — matching nested shapes like ['add', sku, qty] and {'op': 'discount', 'rules': [*rules]} and PriceRequest(...) in one match, producing the typed request object that the pricing layer in Lesson 3 will execute. Wire main.py to call dispatch() so MiniERP has a working command front door.
+```
+match request:
+    case ["add", sku, qty]:
+        return AddRequest(sku, int(qty))
+    case {"op": "discount", "rules": [*rules]}:
+        return DiscountRequest(rules)
+    case PriceRequest() | AddRequest() | DiscountRequest():
+        return request          # already typed -- pass it straight through
+```
 
----
+- `["add", sku, qty]` is a three-element sequence whose **first element is the literal**
+  `"add"` and whose other two are captures — match the shape and pull out the fields at once.
+- `{"op": "discount", "rules": [*rules]}` is a mapping pattern whose `"rules"` value is itself
+  a **sequence pattern**, capturing the rule list. Structure inside structure.
+- A class pattern with empty parentheses, `PriceRequest()`, is a pure type check; joined with
+  `|` it lets any already-built request pass through untouched.
 
-<div class="hint" title="Author notes (remove when populated)">
+This is the design goal of the whole lesson: one declarative `match` that reads like a table
+of the shapes MiniERP accepts, instead of a tangle of `if`/`isinstance`/index checks.
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+## Your task
 
-- **Starter idea:** def dispatch(request) -> object:
-    """Single match/case entry point over CLI lists, dict payloads, and request objects."""
-    match request:
-        case ["add", sku, qty]:
-            ...
-        case {"op": "discount", "rules": [*rules]}:
-            ...
-        case PriceRequest() as req:
-            return req
-        case _:
-            ...
-- **Test focus:** List, dict, and object forms each route to the correct typed request; nested rules list is captured; malformed input yields a HELP/error sentinel.
+In `dispatch.py`, finish `dispatch(request)`. The price-list, passthrough, and fallback cases
+are written. Fill in:
+
+1. the nested **sequence pattern** `["add", sku, qty]`, and
+2. the nested **mapping-with-sequence** pattern `{"op": "discount", "rules": [*rules]}`.
+
+## Worked example
+
+```
+>>> import dispatch
+>>> dispatch.dispatch(["add", "A-001", "3"])
+AddRequest(sku='A-001', qty=3)
+>>> dispatch.dispatch({"op": "discount", "rules": [10, 5]})
+DiscountRequest(rules=[10, 5])
+>>> r = dispatch.PriceRequest("A-001", 1)
+>>> dispatch.dispatch(r) is r          # already typed -> passed through
+True
+>>> dispatch.dispatch(["bogus"])
+<Command.HELP: 'help'>
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: an `["add", sku, qty]` list becomes an `AddRequest` (qty converted to int); a
+  discount mapping becomes a `DiscountRequest` carrying the rules; an existing request object
+  passes through unchanged; anything unrecognized returns `Command.HELP`.
+- Your free choice: you may add more accepted shapes or order the cases differently, as long
+  as the shapes above produce these typed results.
+
+<div class="hint" title="If you are stuck">
+
+The add pattern is `case ["add", sku, qty]:`. The discount pattern nests a list pattern
+inside a mapping: `case {"op": "discount", "rules": [*rules]}:`.
 
 </div>
+
+Reference: Python documentation, "The match statement" (nested patterns) at docs.python.org.

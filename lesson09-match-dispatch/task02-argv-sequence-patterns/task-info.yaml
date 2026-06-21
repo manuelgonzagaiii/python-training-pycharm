@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: dispatch.py
     visible: true
+    placeholders:
+      - offset: 1915
+        length: 2
+        placeholder_text: the empty token list
+      - offset: 2037
+        length: 13
+        placeholder_text: a verb followed by the rest captured as a list called args
   - name: tests/test_task.py
     visible: false
     propagatable: false

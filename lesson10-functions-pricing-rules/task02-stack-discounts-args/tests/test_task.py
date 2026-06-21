@@ -1,10 +1,26 @@
+"""Check for task02-stack-discounts-args.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Zero, one, and many percents stack multiplicatively; clamp_floor option prevents the price dropping below the floor; unpacking *list/**dict at the call site works.
+import rules
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestStackDiscounts(unittest.TestCase):
+    def test_sequential_percents(self):
+        self.assertEqual(rules.stack_discounts(1000, 10, 10), 810)  # 1000->900->810
+
+    def test_no_percents_unchanged(self):
+        self.assertEqual(rules.stack_discounts(1000), 1000)
+
+    def test_clamp_floor_option(self):
+        self.assertEqual(rules.stack_discounts(100, 200, clamp_floor=True), 0)
+
+    def test_without_clamp_can_go_negative(self):
+        self.assertLess(rules.stack_discounts(100, 200), 0)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: rules.py
     visible: true
+    placeholders:
+      - offset: 5436
+        length: 14
+        placeholder_text: declare total as belonging to the enclosing scope
+      - offset: 5779
+        length: 21
+        placeholder_text: declare the module-level counter for reassignment
   - name: tests/test_task.py
     visible: false
     propagatable: false

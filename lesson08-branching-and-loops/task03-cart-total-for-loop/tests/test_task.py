@@ -1,10 +1,23 @@
+"""Check for task03-cart-total-for-loop.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Empty cart returns 0.0; single and multi-line carts total correctly with tier multipliers applied; result is rounded to 2 decimals.
+import pricing
+
+class TestCartSubtotal(unittest.TestCase):
+    def test_subtotal_prices_each_line_by_tier(self):
+        lines = [("A", 1000, 5), ("B", 1000, 10)]   # 5*1000 + 10*950
+        self.assertEqual(pricing.cart_subtotal(lines), 5000 + 9500)
+
+    def test_empty_cart_is_zero(self):
+        self.assertEqual(pricing.cart_subtotal([]), 0)
+
+    def test_single_line(self):
+        self.assertEqual(pricing.cart_subtotal([("A", 250, 3)]), 750)
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+if __name__ == "__main__":
+    unittest.main()

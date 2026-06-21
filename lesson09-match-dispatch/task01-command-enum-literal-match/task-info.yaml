@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: dispatch.py
     visible: true
+    placeholders:
+      - offset: 1192
+        length: 7
+        placeholder_text: the literal string for the PRICE verb
+      - offset: 1365
+        length: 1
+        placeholder_text: the wildcard pattern -- matches anything not listed above
   - name: tests/test_task.py
     visible: false
     propagatable: false

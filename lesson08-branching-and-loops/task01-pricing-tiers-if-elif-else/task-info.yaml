@@ -1,7 +1,17 @@
 type: edu
 files:
-  - name: task.py
+  - name: pricing.py
     visible: true
+    placeholders:
+      - offset: 895
+        length: 8
+        placeholder_text: qty is below the bulk band
+      - offset: 936
+        length: 8
+        placeholder_text: qty is below the wholesale band
+      - offset: 1414
+        length: 18
+        placeholder_text: the tier label for this qty -- call quantity_tier
   - name: tests/test_task.py
     visible: false
     propagatable: false

@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: dispatch.py
     visible: true
+    placeholders:
+      - offset: 5204
+        length: 17
+        placeholder_text: "the 3-element sequence add, sku, qty"
+      - offset: 5383
+        length: 37
+        placeholder_text: a discount op whose rules value is itself a list pattern
   - name: tests/test_task.py
     visible: false
     propagatable: false

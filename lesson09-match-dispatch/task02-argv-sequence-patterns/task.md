@@ -1,33 +1,68 @@
-# Sequence Patterns and the Token Parser
+# Stage 2: sequence patterns and the token parser
 
-> **Phase:** Control Flow & Functions  •  **Stage:** 9.2 of 6  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+A command line arrives as a list of tokens: `["price", "A-001", "3"]`. The dispatcher needs
+to split that into a verb and its arguments. You *could* do it with `len(tokens)` checks and
+indexing, but `match` has **sequence patterns** that match a list by its shape and pull the
+pieces out in the same step.
 
-## What you'll learn
-- Destructure an argv-style token list with sequence patterns
-- Capture a variable-length tail using *rest
-- Match on structure (arity) rather than writing manual length checks
+## Matching by shape
 
-## Python features introduced
-`sequence patterns in match`, `fixed-length sequence patterns [a, b]`, `star pattern [head, *rest]`, `capturing the tail with *rest`, `len()-aware matching`, `list vs tuple in patterns`
+```
+match tokens:
+    case []:
+        ...                 # the empty list
+    case [verb]:
+        ...                 # exactly one element, bound to `verb`
+    case [verb, *args]:
+        ...                 # one or more: first to `verb`, the rest to `args`
+```
 
-## MiniERP increment
-Add parse_tokens(tokens) to cli/dispatch.py that matches the token list: [] -> HELP request, [verb] -> bare command, [verb, *args] -> command with captured args. Returns a (Command, args) pair, giving the dispatcher its structured input from a CLI line.
+- `[]` matches only an empty sequence.
+- `[verb]` matches a sequence of **exactly one** element and binds it to `verb`. The length
+  is part of the pattern — a two-element list will not match here.
+- `[verb, *args]` uses a **star pattern**. It matches a sequence of one-or-more, binding the
+  first element to `verb` and collecting *everything after* into a new list `args` (which may
+  be empty). It is the sequence-pattern cousin of `*rest` in unpacking.
 
----
+Order still matters: because `[verb]` is tested first, a single-element list is caught there,
+so by the time `[verb, *args]` is reached it is effectively handling two-or-more. A pattern
+binds names only when it matches, so inside each branch you can safely use the names that
+branch introduced.
 
-<div class="hint" title="Author notes (remove when populated)">
+## Your task
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+In `dispatch.py`, finish `parse_tokens(tokens)` so it returns a `(Command, args)` pair. The
+one-element case is written. Fill in:
 
-- **Starter idea:** def parse_tokens(tokens: list[str]) -> tuple[Command, list[str]]:
-    """Destructure argv-style tokens with sequence patterns."""
-    match tokens:
-        case []:
-            return (Command.HELP, [])
-        case [verb]:
-            ...
-        case [verb, *args]:
-            ...
-- **Test focus:** Empty list yields a HELP request; single token yields verb with empty args; multi-token yields verb plus the exact captured tail list.
+1. the pattern for the **empty** token list, and
+2. the **star pattern** `[verb, *args]` that captures a verb plus the remaining tokens.
+
+## Worked example
+
+```
+>>> import dispatch
+>>> dispatch.parse_tokens([])
+(<Command.HELP: 'help'>, [])
+>>> dispatch.parse_tokens(["report"])
+(<Command.REPORT: 'report'>, [])
+>>> dispatch.parse_tokens(["price", "A-001", "3"])
+(<Command.PRICE: 'price'>, ['A-001', '3'])
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: an empty list yields `HELP` with no args; a bare verb yields its command with an
+  empty arg list; a verb followed by tokens captures those tokens **as a list**.
+- Your free choice: you may collapse the bare-verb and verb-with-args cases into one
+  `[verb, *args]` branch if you prefer (a single element gives `args == []`), as long as the
+  returned pairs are correct.
+
+<div class="hint" title="If you are stuck">
+
+The empty case is `case []:`. The star pattern is `case [verb, *args]:` — the `*args`
+collects everything after the first token into a list.
 
 </div>
+
+Reference: Python documentation, "Patterns with a literal and variable" and "The match
+statement" (sequence patterns) at docs.python.org.

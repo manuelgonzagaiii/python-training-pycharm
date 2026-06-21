@@ -1,6 +1,12 @@
 type: edu
 files:
-  - name: task.py
+  - name: inventory.py
+    visible: true
+    placeholders:
+      - offset: 861
+        length: 38
+        placeholder_text: the request is still unmet and stock remains
+  - name: pricing.py
     visible: true
   - name: tests/test_task.py
     visible: false

@@ -1,3 +1,12 @@
 type: choice
 is_multiple_choice: false
+options:
+  - text: The else clause runs only if the loop finished without hitting a break.
+    is_correct: true
+  - text: "The else clause runs every time the loop finishes, break or not."
+    is_correct: false
+  - text: The else clause runs only if the loop body executed at least once.
+    is_correct: false
+  - text: The else clause runs only when the loop is exited by a break.
+    is_correct: false
 local_check: true

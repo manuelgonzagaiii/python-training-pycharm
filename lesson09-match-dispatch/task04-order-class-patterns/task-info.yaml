@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: dispatch.py
     visible: true
+    placeholders:
+      - offset: 3613
+        length: 20
+        placeholder_text: "AddRequest matched positionally, binding sku and qty"
+      - offset: 3688
+        length: 26
+        placeholder_text: "PriceRequest matched by keyword, binding s and q"
   - name: tests/test_task.py
     visible: false
     propagatable: false

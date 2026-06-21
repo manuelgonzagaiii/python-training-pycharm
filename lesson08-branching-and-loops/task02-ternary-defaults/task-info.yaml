@@ -1,7 +1,14 @@
 type: edu
 files:
-  - name: task.py
+  - name: pricing.py
     visible: true
+    placeholders:
+      - offset: 1958
+        length: 44
+        placeholder_text: "'$' when currency is USD, else the code plus a space"
+      - offset: 2209
+        length: 38
+        placeholder_text: "the price if it is not negative, otherwise 0"
   - name: tests/test_task.py
     visible: false
     propagatable: false

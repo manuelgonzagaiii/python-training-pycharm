@@ -1,7 +1,15 @@
 type: edu
 files:
-  - name: task.py
+  - name: rules.py
     visible: true
+    placeholders:
+      - offset: 7725
+        length: 37
+        placeholder_text: stack the coupons onto the tiered amount (spread coupons as
+          *args)
+      - offset: 7773
+        length: 47
+        placeholder_text: tax on the discounted amount; rate_bps is keyword-only
   - name: tests/test_task.py
     visible: false
     propagatable: false

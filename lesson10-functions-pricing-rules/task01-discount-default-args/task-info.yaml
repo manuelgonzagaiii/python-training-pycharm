@@ -1,7 +1,11 @@
 type: edu
 files:
-  - name: task.py
+  - name: rules.py
     visible: true
+    placeholders:
+      - offset: 1254
+        length: 15
+        placeholder_text: no list was passed in (the None-sentinel test)
   - name: tests/test_task.py
     visible: false
     propagatable: false

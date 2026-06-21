@@ -1,10 +1,25 @@
+"""Check for task06-validate-lines-while-else.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Returns True for all-valid carts (else fired); returns False on first invalid line (break taken); empty cart returns True.
+import pricing
+
+class TestAllLinesValid(unittest.TestCase):
+    def test_all_valid(self):
+        self.assertTrue(pricing.all_lines_valid([("A", 100, 1), ("B", 0, 5)]))
+
+    def test_empty_is_valid(self):
+        self.assertTrue(pricing.all_lines_valid([]))
+
+    def test_non_positive_qty_invalid(self):
+        self.assertFalse(pricing.all_lines_valid([("A", 100, 1), ("B", 100, 0)]))
+
+    def test_negative_price_invalid(self):
+        self.assertFalse(pricing.all_lines_valid([("A", -1, 3)]))
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+if __name__ == "__main__":
+    unittest.main()
