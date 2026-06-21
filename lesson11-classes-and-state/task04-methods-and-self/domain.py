@@ -1,0 +1,42 @@
+"""MiniERP domain layer: real classes for the catalog.
+
+Earlier phases carried a product as a bare tuple or a dict and passed it to free
+functions. This phase makes it an object: a class that bundles the data (sku, name,
+price) with the behavior that belongs to it (labels, display, validation,
+construction). Prices stay integer cents, never float -- the representation the
+catalog and pricing engine already use.
+"""
+
+
+class Product:
+    """A product in the catalog: a SKU, a display name, and a price in cents.
+
+    Bundling data with behavior is the whole point of a class. Where a tuple needed
+    a free function like label(product), a Product carries label() on itself, so the
+    data and the code that understands it travel together.
+    """
+
+    def __init__(self, sku: str, name: str, price_cents: int) -> None:
+        """Initialize a new product. `self` is the fresh instance; each assignment
+        stores one argument as an attribute that lives on that specific object.
+        """
+        self.sku = sku
+        self.name = name
+        self.price_cents = price_cents
+
+    def label(self) -> str:
+        """A short human label, e.g. 'A-001 - Widget'."""
+        return f"{self.sku} - {self.name}"
+
+    # Class attributes: one shared copy for every Product, not stored per instance.
+    CURRENCY = "USD"
+    DEFAULT_TAX_RATE_BPS = 0  # basis points (1 bp = 0.01%); overridden per sale later
+
+    def price_display(self) -> str:
+        """The price as a currency string, e.g. 1500 -> '$15.00'.
+
+        A method reaches the object's own data through self -- self.price_cents and
+        the shared self.CURRENCY -- so the behavior lives on the product itself.
+        """
+        symbol = "$" if self.CURRENCY == "USD" else f"{self.CURRENCY} "
+        return f"{symbol}{self.price_cents // 100}.{self.price_cents % 100:02d}"

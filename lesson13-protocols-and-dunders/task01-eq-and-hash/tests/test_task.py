@@ -1,10 +1,36 @@
+"""Check for task01-eq-and-hash.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Assert two Money with same cents+currency are equal and have equal hashes; assert unequal currencies compare unequal; assert a set dedupes equal Products; assert comparing to a non-Money returns NotImplemented (so == yields False, not an error).
+import domain
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestEqHash(unittest.TestCase):
+    def setUp(self):
+        domain.Product._instances.clear()
+
+    def test_money_equality_by_value(self):
+        self.assertEqual(domain.Money(1500, "USD"), domain.Money(1500, "USD"))
+        self.assertNotEqual(domain.Money(1500, "USD"), domain.Money(1500, "EUR"))
+        self.assertNotEqual(domain.Money(1500), domain.Money(1600))
+
+    def test_money_hashable(self):
+        s = {domain.Money(1500), domain.Money(1500), domain.Money(250)}
+        self.assertEqual(len(s), 2)
+        self.assertEqual({domain.Money(1500): "a"}[domain.Money(1500)], "a")
+
+    def test_product_equality_by_sku(self):
+        a = domain.Product("A-1", "Widget", 100)
+        self.assertEqual(a, domain.Product("A-1", "Other", 999))
+        self.assertNotEqual(a, domain.Product("B-2", "Widget", 100))
+
+    def test_not_equal_to_other_type(self):
+        self.assertNotEqual(domain.Money(100), 100)
+        self.assertNotEqual(domain.Product("A-1", "W", 1), "A-1")
+
+
+if __name__ == "__main__":
+    unittest.main()

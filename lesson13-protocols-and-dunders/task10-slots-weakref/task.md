@@ -1,27 +1,99 @@
-# Slots vs. weak references: a one-instance-per-SKU registry
+# Stage 10: slots, weak references, and a one-instance-per-SKU registry
 
-> **Phase:** OOP Foundations  •  **Stage:** 13.10 of 10  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+Back in lesson 11, `Product.__new__` interned products in a plain dict so a SKU always mapped to
+one canonical object. That dict was a deliberate placeholder with a known flaw: it holds a
+**strong** reference to every product forever, so nothing is ever freed — a slow memory leak.
+This final stage fixes it properly with **weak references**, and in doing so meets the one
+remaining wrinkle of `__slots__`.
 
-## What you'll learn
-- Explain why a class with __slots__ silently loses the ability to be weakly referenced, and name the exact error you get (TypeError: cannot create weak reference to ... object).
-- Add '__weakref__' to a class's __slots__ to restore weakref support without giving up the memory/typo-safety benefits of slots.
-- Use weakref.WeakValueDictionary to build an identity cache whose entries disappear automatically once no strong references remain, so the cache never keeps objects alive on its own.
-- Understand that weakref support is inherited: a subclass of a weakrefable (slotted) base is itself weakrefable even if its own __slots__ omits '__weakref__' — and that repeating '__weakref__' in the subclass is an error.
-- Distinguish object identity (is) from equality (==) and see why an identity cache must hand back the same instance, not just an equal one.
+## The slots-versus-weakref wrinkle
 
-## Python features introduced
-`__slots__`, `__weakref__ slot`, `weakref.ref`, `weakref.WeakValueDictionary`, `TypeError: cannot create weak reference to ... object`, `__weakref__ descriptor on the class`, `slots inheritance of weakref support (subclass of a weakrefable base)`, `gc.collect for deterministic eviction in tests`, `@classmethod alternative constructor`, `is identity vs == equality`
+A normal object can always be weak-referenced. A **slotted** object cannot — unless you opt in
+by adding `"__weakref__"` to its `__slots__`:
 
-## MiniERP increment
-Extends the slotted `Product` domain object (built earlier in this phase's `slots-optimization` task) so the service layer can guarantee a single canonical in-memory instance per SKU. You add `'__weakref__'` to `Product.__slots__`, then implement an `EntityRegistry` (or `ProductRegistry`) backed by `weakref.WeakValueDictionary` exposing `canonical(product)` / `get(sku)`: the first time a SKU is seen the registry stores and returns that instance; later loads of the same SKU return the *same* object (verified with `is`), so inventory adjustments, price edits, and audit entries all act on one shared Product rather than diverging copies. Because the dictionary holds only weak references, a Product that is dropped everywhere else is evicted from the registry automatically — the cache shrinks with the working set instead of leaking every Product the app has ever touched. This identity map is the foundation later interfaces (CLI/Web/GUI/TUI) reuse so concurrent views of the same SKU stay consistent.
+```
+    __slots__ = ("sku", "name", "_price_cents", "_discount_cents", "__weakref__")
+```
 
----
+Without that entry, `weakref.ref(product)` raises `TypeError: cannot create weak reference`.
+This is the cost of slots the last stage hinted at: by removing the per-instance dict, you also
+removed the hidden slot that normally supports weak references, so you add it back explicitly
+when you need it. And you need it now, because the registry holds products *weakly*.
 
-<div class="hint" title="Author notes (remove when populated)">
+## A weak identity map
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+`weakref.WeakValueDictionary` is a dict whose **values** are held only weakly: when a value is
+no longer referenced anywhere else, it is dropped from the dict automatically. That is exactly
+right for an identity map — it tracks the products currently in use and forgets the rest:
 
-- **Starter idea:** Given the slotted `Product` from `slots-optimization`, first try to build a `WeakValueDictionary` cache and watch it raise `TypeError: cannot create weak reference to 'Product' object`; then fix it. `class Product:\n    __slots__ = ('sku', 'name', 'price_cents', 'qty_on_hand', '__weakref__')  # <- add __weakref__\n    ...\n\nimport weakref\nclass ProductRegistry:\n    def __init__(self) -> None:\n        self._by_sku: 'weakref.WeakValueDictionary[str, Product]' = weakref.WeakValueDictionary()\n    def canonical(self, product: Product) -> Product:\n        existing = self._by_sku.get(product.sku)\n        if existing is not None:\n            return existing\n        self._by_sku[product.sku] = product\n        return product\n    def get(self, sku: str) -> Product | None:\n        return self._by_sku.get(sku)`
-- **Test focus:** Verify (1) the fixed slotted Product can be weakly referenced: weakref.ref(product) succeeds and `'__weakref__'` is in Product.__slots__ (the class still uses slots, so setting an undeclared attribute still raises AttributeError); (2) ProductRegistry.canonical returns the *same* object (assertIs) for two equal Products sharing a SKU, and a later get(sku) returns that identical instance; (3) the registry does not keep Products alive — after dropping all strong refs and calling gc.collect(), get(sku) returns None and len shrinks (entry auto-evicted via the WeakValueDictionary); (4) a regression guard reproducing the gotcha: a sibling slotted class WITHOUT '__weakref__' raises TypeError when inserted into a WeakValueDictionary, with the message containing 'cannot create weak reference'; (5) a subclass of Product that adds its own slots but omits '__weakref__' is still weakrefable (inherited).
+```
+import weakref
+
+class ProductRegistry:
+    def __init__(self):
+        self._by_sku = weakref.WeakValueDictionary()
+
+    def canonical(self, product):
+        existing = self._by_sku.get(product.sku)
+        if existing is not None:
+            return existing
+        self._by_sku[product.sku] = product
+        return product
+
+    def get(self, sku):
+        return self._by_sku.get(sku)
+```
+
+`canonical(product)` returns the one shared instance for a SKU — the same object every time, so
+inventory edits, price changes, and audit entries all act on a single `Product` rather than
+diverging copies. But because the references are weak, a product dropped everywhere else is
+**evicted automatically**, so the registry shrinks with the working set instead of leaking.
+This is the proper replacement for lesson 11's strong dict, and the interning cache
+`Product._instances` is upgraded to a `WeakValueDictionary` in the same spirit (which is *why*
+`Product` needs `"__weakref__"` in its slots — a weak map's values must be weak-referenceable).
+
+The mental model: a **strong** reference keeps an object alive; a **weak** reference lets you
+reach an object *without* keeping it alive. Caches and registries want weak references so they
+help while the object is in use and get out of the way when it is not.
+
+## Your task
+
+In `domain.py`, finish `ProductRegistry.__init__` so `self._by_sku` is a dictionary that holds
+its values **weakly**. `Product.__slots__` already includes `"__weakref__"`, and the
+`canonical`/`get` methods are provided.
+
+## Worked example
+
+```
+>>> import domain, weakref, gc
+>>> p = domain.Product("W-1", "Widget", 100)
+>>> weakref.ref(p)() is p              # weak ref works -- "__weakref__" is in __slots__
+True
+>>> reg = domain.ProductRegistry()
+>>> reg.canonical(p) is p              # registers and returns the canonical instance
+True
+>>> reg.get("W-1") is p
+True
+>>> domain.Product._instances.clear(); del p; _ = gc.collect()
+>>> reg.get("W-1")                     # dropped everywhere else -> evicted, returns None
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: a `Product` can be weak-referenced (so `"__weakref__"` is in its slots); the
+  registry returns one canonical instance per SKU; and a product dropped everywhere else is
+  evicted from the registry after garbage collection.
+- Your free choice: the registry's internals beyond "values held weakly" are yours. A plain
+  dict here would pass the identity checks but **fail** the eviction check — it would leak,
+  which is the exact bug this stage exists to fix, so the weak map is genuinely required, not a
+  preference.
+
+<div class="hint" title="If you are stuck">
+
+`self._by_sku = weakref.WeakValueDictionary()`. Its values are held weakly, so when a product
+is no longer referenced elsewhere it disappears from the registry on its own.
 
 </div>
+
+Reference: Python documentation, "weakref — Weak references (WeakValueDictionary)" and "Data
+model — __slots__ and __weakref__" at docs.python.org.

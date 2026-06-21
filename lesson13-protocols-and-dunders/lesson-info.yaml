@@ -1,4 +1,3 @@
-type: framework
 content:
   - task01-eq-and-hash
   - task02-rich-comparisons

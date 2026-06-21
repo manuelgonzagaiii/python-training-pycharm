@@ -1,28 +1,90 @@
-# Byte Serialization with __bytes__
+# Stage 8: byte serialization with __bytes__
 
-> **Phase:** OOP Foundations  •  **Stage:** 13.8 of 10  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+To store money in a binary file, append it to an audit log, or send it over a socket, you need
+a **byte representation** — and one that survives a round trip exactly, with no float drift and
+no locale ambiguity. This stage gives `Money` a fixed-width binary encoding via the `__bytes__`
+dunder and the `struct` module, plus a `from_bytes` classmethod to read it back.
 
-## What you'll learn
-- Explain that bytes(obj) calls obj.__bytes__() and must return a real bytes object, contrasting it with __repr__/__str__/__format__ which all return str.
-- Implement __bytes__ on the existing Money value object to emit a compact, fixed-width binary record using struct.pack with an explicit byte order.
-- Choose and read a struct format string deliberately: network byte order, a signed 8-byte integer for minor-unit amounts, and a fixed-width currency field.
-- Provide a Money.from_bytes classmethod that reverses __bytes__ with struct.unpack, establishing the round-trip invariant Money.from_bytes(bytes(m)) == m.
-- Distinguish bytes (immutable), bytearray (mutable), and memoryview (zero-copy view), and know when bytes(int) builds a zero-filled buffer instead of calling __bytes__.
-- Recognize that returning anything other than bytes from __bytes__ makes bytes(obj) raise TypeError.
+## bytes(obj) and __bytes__
 
-## Python features introduced
-`__bytes__ dunder method`, `bytes(obj) protocol / bytes constructor dispatch`, `struct.pack / struct.unpack for fixed binary layout`, `struct format strings (network byte order '!', signed long long 'q', unsigned 'B')`, `classmethod alternate constructor (from_bytes)`, `@classmethod decorator`, `int.from_bytes / int.to_bytes (big-endian, signed) as a stdlib contrast`, `bytes vs bytearray vs memoryview (immutability and views)`, `len(bytes) and indexing/slicing of bytes objects`, `enum/StrEnum member encoded as a fixed-width byte`, `.encode('utf-8') / bytes.decode('utf-8') for the currency code`, `round-trip invariant (obj == from_bytes(bytes(obj)))`, `TypeError raised by bytes(obj) when __bytes__ returns a non-bytes value`
+`bytes(money)` calls `money.__bytes__()`, which must return a `bytes` object. The goal is a
+**fixed-layout** record so any reader knows exactly how to parse it. `struct.pack` builds such
+a record from a format string:
 
-## MiniERP increment
-Adds a stable on-the-wire binary encoding to the MiniERP core domain. The Money value object (built in the earlier money-value-object stage, an immutable kw_only slotted dataclass storing an integer minor-unit amount plus a 3-letter ISO currency code) gains a __bytes__ method that packs each value into a fixed 12-byte record via struct: a 1-byte version tag, a 3-byte ASCII currency code, and a signed 8-byte big-endian minor-unit amount, all in network byte order. A Money.from_bytes(data) classmethod unpacks that record back into an equal Money, giving the domain layer a deterministic, length-prefixable serialization that downstream phases reuse for the append-only audit log, binary import/export files, and length-framed records sent over sockets. Because the encoding is fixed-width and version-tagged, MiniERP can persist and re-read monetary amounts without floating-point drift or locale ambiguity, and the round-trip invariant becomes a guarantee the test suite enforces.
+```
+import struct
 
----
+    def __bytes__(self):
+        return struct.pack("!B3sq", 1, self.currency.encode("ascii"), self.cents)
+```
 
-<div class="hint" title="Author notes (remove when populated)">
+Read the format `"!B3sq"` left to right:
 
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
+- `!` — **network byte order** (big-endian), the portable choice so a record written on one
+  machine reads the same on another.
+- `B` — one **unsigned byte**, here a version tag (`1`). Tagging the version means the format
+  can evolve later without misreading old records.
+- `3s` — a **3-byte** string, the ASCII currency code (`b"USD"`).
+- `q` — a **signed 8-byte** integer, the cents. Signed so a negative amount (a credit) encodes
+  too; 8 bytes so it never overflows.
 
-- **Starter idea:** Reuse the Money value object from the money-value-object stage (frozen, slots=True, kw_only=True dataclass with fields `amount: int` for minor units and `currency: str` for the ISO code). Add `import struct` and the constant `_FORMAT = "!B3sq"` (network order: version byte, 3-byte currency, signed 8-byte amount) and `_VERSION = 1`. Implement `def __bytes__(self) -> bytes:` returning `struct.pack(_FORMAT, _VERSION, self.currency.encode("ascii"), self.amount)`. Add `@classmethod` `def from_bytes(cls, data: bytes) -> "Money":` that calls `struct.unpack(_FORMAT, data)`, validates the version byte equals `_VERSION` (raise ValueError otherwise), decodes the currency with `.decode("ascii").rstrip("\\x00")`, and returns `cls(amount=amount, currency=currency)`. Leave the existing __repr__/__str__/__format__ from the prior stage untouched.
-- **Test focus:** Verify bytes(Money(amount=12345, currency="USD")) returns a bytes object of length exactly 12 (struct.calcsize("!B3sq")), that its first byte is the version tag 1, and that bytes 1..4 decode to b"USD". Assert the round-trip invariant Money.from_bytes(bytes(m)) == m across several amounts including negative (e.g. -500 for a refund) and zero. Confirm from_bytes raises ValueError on a record whose version byte is not 1, and that supplying a wrong-length buffer raises struct.error. Include a check that bytes(m) is an instance of bytes (not bytearray) so a __bytes__ returning the wrong type would fail. Optionally assert the encoding is deterministic (two equal Money objects produce identical bytes).
+That is `1 + 3 + 8 = 12` bytes, every time. The integer-cents representation is what makes this
+clean: a fixed-width integer packs exactly, where a float never could.
+
+## Reading it back
+
+`from_bytes` is the inverse — `struct.unpack` with the *same* format returns the fields, which
+rebuild the `Money`:
+
+```
+    @classmethod
+    def from_bytes(cls, data):
+        version, currency, cents = struct.unpack("!B3sq", data)
+        return cls(cents, currency.decode("ascii"))
+```
+
+The contract that matters is the **round-trip invariant**: `Money.from_bytes(bytes(m)) == m`
+for every `m`. The test suite enforces it, which is what makes this encoding safe to persist
+and reload. (`int.to_bytes`/`int.from_bytes` is the stdlib way to encode a single integer;
+`struct` is the right tool here because a record has *several* fixed-width fields.)
+
+## Your task
+
+In `domain.py`, finish the two `struct` calls on `Money`:
+
+1. `__bytes__` — pack the version `1`, the encoded currency, and the cents with the `"!B3sq"`
+   layout.
+2. `from_bytes` — unpack the same layout from `data`.
+
+## Worked example
+
+```
+>>> import domain
+>>> m = domain.Money(1599, "USD")
+>>> data = bytes(m)
+>>> len(data)                        # fixed 12-byte record
+12
+>>> domain.Money.from_bytes(data) == m
+True
+>>> domain.Money.from_bytes(bytes(domain.Money(-2500, "EUR"))).cents   # negative survives
+-2500
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: `bytes(money)` is exactly 12 bytes; `from_bytes(bytes(m))` reconstructs an
+  equal `Money` (the round-trip invariant), including negative amounts and non-USD currencies.
+- Your free choice: the precise field order is fixed only because both ends must agree; within
+  that, the encoding is the point. The check insists on the round trip, because a serialization
+  that doesn't read back what it wrote is simply broken.
+
+<div class="hint" title="If you are stuck">
+
+Pack: `struct.pack("!B3sq", 1, self.currency.encode("ascii"), self.cents)`. Unpack:
+`struct.unpack("!B3sq", data)` returns `(version, currency, cents)`; decode the currency bytes
+back to a string.
 
 </div>
+
+Reference: Python documentation, "struct — Interpret bytes as packed binary data" and "Data
+model — object.__bytes__" at docs.python.org.

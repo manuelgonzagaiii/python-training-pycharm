@@ -1,36 +1,71 @@
-# Alternate Constructors with @classmethod
+# Stage 5: alternate constructors with @classmethod
 
-> **Phase:** OOP Foundations  •  **Stage:** 11.5 of 7  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+`Product("A-001", "Widget", 999)` builds a product from three separate arguments. But real
+data arrives in other shapes: a CSV row `("A-001", "Widget", 999)`, or a dict from a JSON
+request `{"sku": "A-001", ...}`. You could make every caller unpack those before calling
+`Product(...)`, but it is cleaner to give the class **alternate constructors** that accept
+those shapes directly. In Python that is what `@classmethod` is for.
 
-## What you'll learn
-- Write a @classmethod that receives cls and builds an instance
-- Understand cls vs self and why factories use cls (subclass-friendly)
-- Provide multiple named construction paths for one class
-- Use a class attribute mutated through cls to track instances
+## What a classmethod is
 
-## Python features introduced
-`@classmethod decorator`, `cls parameter`, `alternative constructors / factory methods`, `returning cls(...)`, `class-level counter via cls`
+A method decorated with `@classmethod` receives the **class itself** as its first parameter,
+named `cls`, instead of an instance (`self`). Because it has the class in hand, it can build
+and return a new instance with `cls(...)`:
 
-## MiniERP increment
-Add Product.from_row(cls, row) to build a Product from a CSV-style tuple/dict (mirroring the import format from earlier phases) and from_dict(cls, data), giving the catalog clean factory entry points for later Import/Export.
-
----
-
-<div class="hint" title="Author notes (remove when populated)">
-
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
-
-- **Starter idea:** class Product:
-    def __init__(self, sku: str, name: str, price_cents: int) -> None:
-        ...
-
+```
     @classmethod
-    def from_row(cls, row: tuple[str, str, int]) -> "Product":
-        ...  # return cls(*row)
+    def from_row(cls, row):
+        sku, name, price_cents = row
+        return cls(sku, name, price_cents)
+```
 
-    @classmethod
-    def from_dict(cls, data: dict[str, object]) -> "Product":
-        ...  # return cls(data["sku"], data["name"], data["price_cents"])
-- **Test focus:** Assert from_row builds an equivalent Product to the direct constructor; assert from_dict reads the right keys; assert the factory returns an instance of the class.
+You call it on the class — `Product.from_row(("A-001", "Widget", 999))` — and it hands back a
+fully built Product. This is the idiomatic "factory method" pattern: the normal `__init__`
+stays focused on the canonical arguments, while named classmethods document and handle each
+alternative input shape.
+
+Why `cls` rather than just writing `Product(...)` directly? Using `cls` means a subclass that
+inherits `from_row` builds an instance of *the subclass*, not always a base `Product` — the
+factory follows the class it was called on. That correctness-under-inheritance is the whole
+reason classmethods take `cls`.
+
+## Your task
+
+In `domain.py`, finish two classmethods:
+
+1. `from_row(cls, row)` — the row is already unpacked into `sku, name, price_cents`; return a
+   product built from them using `cls`.
+2. `from_dict(cls, data)` — written for you as a model, building from `data["sku"]` and the
+   other keys.
+
+## Worked example
+
+```
+>>> import domain
+>>> p = domain.Product.from_row(("A-001", "Widget", 999))
+>>> p.label(), p.price_cents
+('A-001 - Widget', 999)
+>>> q = domain.Product.from_dict({"sku": "B-010", "name": "Gizmo", "price_cents": 250})
+>>> q.sku
+'B-010'
+>>> isinstance(p, domain.Product)
+True
+```
+
+## What the check verifies, and what it leaves to you
+
+- Enforced: `from_row` and `from_dict` each return a real `Product` whose fields match the
+  input.
+- Your free choice: how you construct it. `cls(sku, name, price_cents)` is the recommended,
+  inheritance-safe form, but `Product(sku, name, price_cents)` produces the same object and
+  also passes — the check grades the resulting instance, not the spelling.
+
+<div class="hint" title="If you are stuck">
+
+`from_row` ends with `return cls(sku, name, price_cents)` — the three names were unpacked from
+`row` on the line above.
 
 </div>
+
+Reference: Python documentation, "@classmethod" (Built-in Functions) and "Classes" at
+docs.python.org.

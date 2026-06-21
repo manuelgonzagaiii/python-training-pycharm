@@ -1,10 +1,25 @@
+"""Check for task02-product-class.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Construct a Product, assert each instance attribute is stored correctly, and assert label() returns the 'SKU - Name' format.
+import domain
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestProduct(unittest.TestCase):
+    def test_attributes_set(self):
+        p = domain.Product("A-001", "Widget", 999)
+        self.assertEqual(p.sku, "A-001")
+        self.assertEqual(p.name, "Widget")
+        self.assertEqual(p.price_cents, 999)
+
+    def test_label(self):
+        p = domain.Product("A-001", "Widget", 999)
+        self.assertIn("A-001", p.label())
+        self.assertIn("Widget", p.label())
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,10 +1,30 @@
+"""Check for task02-property-setter.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
+from decimal import Decimal
 
-# TODO(author): replace with real checks.
-# Test focus: Assert setting a valid price updates the backing field; assert setting a negative price raises ValueError; assert __init__ routes through the setter.
+import domain
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestPriceSetter(unittest.TestCase):
+    def test_set_valid_price(self):
+        p = domain.Product("A", "W", 100)
+        p.price_cents = 250
+        self.assertEqual(p.price_cents, 250)
+
+    def test_negative_rejected_on_assignment(self):
+        p = domain.Product("A", "W", 100)
+        with self.assertRaises(ValueError):
+            p.price_cents = -1
+
+    def test_negative_rejected_in_constructor(self):
+        # __init__ assigns through the same setter
+        with self.assertRaises(ValueError):
+            domain.Product("A", "W", -5)
+
+
+if __name__ == "__main__":
+    unittest.main()

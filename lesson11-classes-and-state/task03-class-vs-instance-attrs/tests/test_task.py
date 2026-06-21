@@ -1,10 +1,27 @@
+"""Check for task03-class-vs-instance-attrs.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Assert Product.CURRENCY is readable on both the class and an instance; assert two distinct instances share the class attribute but hold independent sku/name/price; demonstrate that setting price on one instance does not change another.
+import domain
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestClassAttrs(unittest.TestCase):
+    def test_currency_is_class_level(self):
+        self.assertEqual(domain.Product.CURRENCY, "USD")
+        p = domain.Product("A", "W", 1)
+        self.assertEqual(p.CURRENCY, "USD")  # instances see the class attribute
+
+    def test_currency_shared_across_instances(self):
+        a = domain.Product("A", "W", 1)
+        b = domain.Product("B", "X", 2)
+        self.assertEqual(a.CURRENCY, b.CURRENCY)
+
+    def test_tax_rate_constant_exists(self):
+        self.assertEqual(domain.Product.DEFAULT_TAX_RATE_BPS, 0)
+
+
+if __name__ == "__main__":
+    unittest.main()

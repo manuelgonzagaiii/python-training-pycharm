@@ -1,10 +1,27 @@
+"""Check for task06-staticmethods-helpers.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Assert is_valid_sku accepts valid SKUs and rejects empty/invalid ones; assert it is callable on both the class and an instance without an instance argument.
+import domain
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestIsValidSku(unittest.TestCase):
+    def test_valid(self):
+        self.assertTrue(domain.Product.is_valid_sku("A-001"))
+        self.assertTrue(domain.Product.is_valid_sku("AB12"))
+
+    def test_invalid(self):
+        self.assertFalse(domain.Product.is_valid_sku(""))
+        self.assertFalse(domain.Product.is_valid_sku("bad sku"))   # space
+        self.assertFalse(domain.Product.is_valid_sku("nope!"))     # punctuation
+
+    def test_callable_without_instance(self):
+        # a staticmethod is reachable on the class itself
+        self.assertTrue(domain.Product.is_valid_sku("X-1"))
+
+
+if __name__ == "__main__":
+    unittest.main()

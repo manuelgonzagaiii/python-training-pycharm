@@ -1,81 +1,81 @@
-# Integer-Like Objects with __index__
+# Stage 9: integer-like objects with __index__
 
-> **Phase:** OOP Foundations  •  **Stage:** 13.9 of 10  •  **Type:** `edu`  •  **Status:** skeleton (to be populated)
+An invoice line is often referred to by its number — "line 3". Passing that around as a bare
+`int` loses meaning and invites mistakes (which int was a line number, which a quantity?). A
+small value object, `LineRef`, makes the intent explicit while still **behaving like an
+integer** everywhere a position is needed — because it implements `__index__`.
 
-## What you'll learn
-- Explain why __index__ exists separately from __int__: it promises a *lossless* integer (no rounding/truncation), so Python trusts it for positions, slices, and base conversions where a float would be nonsense.
-- Implement __index__ on a domain value object so an instance can be used directly as a list/tuple index (lines[ref]), inside a slice (lines[a:b]), and as an argument to range(), bin(), hex(), and oct().
-- Use operator.index(x) as the library-author way to coerce 'something integer-like' to a real int, and know it raises TypeError (not a silent truncation) when the object only defines __int__.
-- Distinguish the three integer-ish protocols: __int__ (may lose information, used by int()), __index__ (lossless, used by indexing/slicing/bin/hex/oct/range), and plain construction.
-- Apply this in the ERP: build a 1-based LineRef value object that indexes 0-based storage correctly and renders as a fixed-width hex code in audit output.
+## __index__: lossless integer conversion
 
-## Python features introduced
-`__index__`, `operator.index`, `difference between __index__ and __int__ (lossless integer-only conversion)`, `objects usable as sequence indices (seq[obj]) and in slices (seq[obj:obj])`, `bin() / hex() / oct() / format(x, 'b'|'x'|'o') accepting __index__ objects`, `range(start, stop, step) and itertools/range arguments via __index__`, `operator.index() as the canonical 'give me a real int, losslessly' protocol`, `TypeError raised by operator.index when __index__ is absent (vs silent __int__ truncation)`, `dataclasses with slots=True, frozen=True`, `__post_init__ validation`, `comparison via @functools.total_ordering or explicit __eq__/__lt__`, `__repr__ and __str__ on a value object`, `raising TypeError/ValueError with informative messages`
+`__index__` is the protocol for "this object IS an integer position". When Python needs a real
+integer for indexing, slicing, or `range()`, it calls `__index__`:
 
-## MiniERP increment
-Adds a LineRef integer-like value object to the Sales/Invoicing domain and wires it into the line-item container built earlier in p05 (the Invoice/order that already implements __len__/__bool__). LineRef wraps a human-facing 1-based line number for an invoice line. Because it implements __index__, a LineRef can index the invoice's 0-based internal line storage directly (invoice.line_at(ref) does lines[operator.index(ref) - 1] or, after offset, lines[ref]), appear in slices when printing a range of lines, and be passed to range() when iterating line numbers. The same __index__ powers a stable, fixed-width hex line code (e.g. format(ref, '04x') -> 'L-000a') used in the audit log and export so every line has a compact machine code. LineRef deliberately does NOT define __int__-only behavior: it defines __index__, so operator.index works and float-style truncation is impossible — guaranteeing invoice line positions are always exact integers. This turns 'which line?' from a bare int passed around into a validated, self-describing domain type that still behaves like an int everywhere a position is needed.
-
----
-
-<div class="hint" title="Author notes (remove when populated)">
-
-**TODO(author):** replace this stub with the full task description, then put starter code in `task.py` and real checks in `tests/test_task.py`.
-
-- **Starter idea:** import operator
-from dataclasses import dataclass
-
-
-@dataclass(slots=True, frozen=True, order=True)
+```
 class LineRef:
-    """A 1-based reference to a line on an invoice/order.
+    def __init__(self, number):
+        if number < 1:
+            raise ValueError("line number is 1-based")
+        self.number = number
 
-    LineRef is *integer-like*: it implements __index__ so an instance can be
-    used as a sequence index, in a slice, and as an argument to range(),
-    bin(), hex(), oct(), and operator.index(). It does NOT define __int__,
-    which proves the point: __index__ is the lossless integer protocol.
-    """
+    def __index__(self):
+        return self.number
+```
 
-    number: int  # human-facing, 1-based (line 1 is the first line)
+With that one method, a `LineRef` works as a list index (`seq[ref]`), inside a slice
+(`seq[a:ref]`), as a `range()` argument, and via `operator.index(ref)` — the canonical "give me
+a real int, losslessly" call. It also feeds `bin()`, `hex()`, and `oct()`, which call
+`operator.index` internally. (Number-base *formatting* like `format(ref, 'x')` is a separate
+protocol — `__format__`, not `__index__` — so it would need its own method and is not provided
+by `__index__` alone.)
 
-    def __post_init__(self) -> None:
-        # TODO: reject non-int / non-positive line numbers with a clear error.
-        # A LineRef must be an exact, positive integer position.
-        ...
+## Why __index__, not __int__
 
-    def __index__(self) -> int:
-        # TODO: return the underlying int LOSSLESSLY.
-        # This is what makes LineRef usable as lines[ref], in lines[a:b],
-        # and in range(ref) / bin(ref) / hex(ref) / format(ref, '04x').
-        ...
+Python has two "make an int" hooks, and the difference is the whole point of this stage:
 
-    @property
-    def zero_based(self) -> int:
-        """Index into 0-based internal storage (number - 1)."""
-        ...
+- `__int__` is for **lossy** conversions — `int(3.7)` truncates to `3`. Float defines it.
+- `__index__` is for objects that **are exactly an integer**, with no truncation. Only true
+  integer-like types should define it.
 
-    @property
-    def code(self) -> str:
-        """Stable fixed-width hex line code for audit/export, e.g. 'L-000a'."""
-        # Hint: f"L-{self:04x}" works *because* __index__ exists.
-        ...
+By defining `__index__` and *not* `__int__`, `LineRef` guarantees a line position is always an
+exact whole number — there is no float-style truncation path. `operator.index()` enforces this:
+it accepts `__index__` objects and **rejects** anything that only offers `__int__`, so code that
+uses `operator.index` can never silently truncate a float into a line number. Choosing
+`__index__` is a correctness statement: positions are integers, full stop.
 
-    def __repr__(self) -> str:
-        ...
+## Your task
 
+In `domain.py`, finish `LineRef.__index__` so it returns the underlying 1-based `number`. The
+constructor (which rejects numbers below 1) and `__repr__` are provided.
 
-def line_at(lines: list, ref: LineRef):
-    """Return the line a LineRef points to from 0-based storage.
+## Worked example
 
-    Use operator.index(ref) to coerce ref to a real int the library-author
-    way; it raises TypeError if handed something that only defines __int__.
-    """
-    ...
+```
+>>> import domain, operator
+>>> operator.index(domain.LineRef(5))
+5
+>>> [10, 20, 30, 40][domain.LineRef(2)]      # used as a list index
+30
+>>> list(range(domain.LineRef(1), domain.LineRef(4)))   # used as range bounds
+[1, 2, 3]
+>>> domain.LineRef(0)
+Traceback (most recent call last):
+ValueError: line number is 1-based
+```
 
+## What the check verifies, and what it leaves to you
 
-def line_numbers(count: int) -> list:
-    """Return [LineRef(1), ..., LineRef(count)] for a count of lines."""
-    ...
+- Enforced: `operator.index(ref)` returns the number; a `LineRef` works as a list index and as
+  `range()` arguments; a number below 1 raises `ValueError`.
+- Your free choice: how you store and return the number, as long as `__index__` yields the
+  exact integer. The check uses the value in real indexing/range contexts, so any faithful
+  implementation passes.
 
-- **Test focus:** Verify __index__ is the lossless integer protocol and is correctly wired into ERP line addressing. (1) A LineRef instance indexes a real list directly: ['a','b','c'][LineRef(1).zero_based] == 'a', and slicing with derived ints works. (2) operator.index(LineRef(10)) == 10 and returns a real int. (3) bin/hex/oct/format accept a LineRef: hex(LineRef(10)) == '0xa', format(LineRef(10), '04x') == '000a', LineRef(10).code == 'L-000a'. (4) range(LineRef(3)) == range(3) -> consumes to [0,1,2], and LineRef works as a range bound. (5) Crucially, LineRef does NOT define __int__: assert that calling int(LineRef(5)) still works *only because __index__ is the fallback for int()* (int() honors __index__) but that a sibling Bad class defining only __int__ raises TypeError under operator.index(Bad()) — proving __index__ != __int__. (6) line_at(lines, ref) returns the correct 0-based element and raises TypeError when passed a float-like/only-__int__ object. (7) __post_init__ rejects LineRef(0), LineRef(-1), and non-int numbers with ValueError/TypeError. (8) line_numbers(3) == [LineRef(1), LineRef(2), LineRef(3)] and ordering/equality (frozen+order dataclass) behave.
+<div class="hint" title="If you are stuck">
+
+`__index__` is one line: `return self.number`. That single method is what lets the object stand
+in for an int in `seq[ref]`, slices, and `range()`.
 
 </div>
+
+Reference: Python documentation, "Data model — object.__index__" and "operator.index" at
+docs.python.org.

@@ -1,10 +1,19 @@
+"""Check for task04-methods-and-self.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Assert price_display() formats cents as '$15.00'; assert summary() composes label() and price_display() by calling them through self.
+import domain
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestPriceDisplay(unittest.TestCase):
+    def test_dollars_and_cents(self):
+        self.assertEqual(domain.Product("A", "W", 1500).price_display(), "$15.00")
+        self.assertEqual(domain.Product("A", "W", 999).price_display(), "$9.99")
+        self.assertEqual(domain.Product("A", "W", 5).price_display(), "$0.05")
+
+
+if __name__ == "__main__":
+    unittest.main()

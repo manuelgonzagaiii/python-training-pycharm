@@ -1,10 +1,31 @@
+"""Check for task07-new-vs-init.
+
+Grading policy: validity, not wording.
+"""
+
 import unittest
 
-# TODO(author): replace with real checks.
-# Test focus: Assert constructing two Products with the same SKU returns the identical object (is); assert __new__ runs before __init__; assert a different SKU yields a different object.
+import domain
 
 
-class TestCase(unittest.TestCase):
-    @unittest.skip("skeleton: this task has not been populated yet")
-    def test_placeholder(self):
-        self.fail("populate this task")
+class TestInterning(unittest.TestCase):
+    def setUp(self):
+        domain.Product._instances.clear()
+
+    def test_same_sku_returns_same_object(self):
+        a = domain.Product("A-001", "Widget", 999)
+        b = domain.Product("A-001", "Renamed", 100)
+        self.assertIs(a, b)  # interned by SKU
+
+    def test_different_sku_distinct_objects(self):
+        a = domain.Product("A-001", "Widget", 999)
+        c = domain.Product("B-010", "Gizmo", 250)
+        self.assertIsNot(a, c)
+
+    def test_init_still_runs(self):
+        p = domain.Product("Z-9", "Thing", 42)
+        self.assertEqual(p.price_cents, 42)
+
+
+if __name__ == "__main__":
+    unittest.main()
